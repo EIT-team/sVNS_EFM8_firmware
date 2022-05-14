@@ -81,6 +81,7 @@ SI_SBIT (P17, SFR_P1, 7);                   // Pin 1.7 for MUX36S16 A0
 SI_SBIT (P16, SFR_P1, 6);                   // Pin 1.6 for MUX36S16 A1
 SI_SBIT (P15, SFR_P1, 5);                   // Pin 1.5 for MUX36S16 A2
 SI_SBIT (P14, SFR_P1, 4);                   // Pin 1.4 for MUX36S16 A3
+uint8_t mux36s16_state;                     // MUX36S16 state byte
 // MUX36S16 state function
 void MUX36S16_output(uint8_t);
 
@@ -88,6 +89,7 @@ void MUX36S16_output(uint8_t);
 SI_SBIT (P02, SFR_P0, 2);                   // Pin 0.2 for MUX36D08 A0
 SI_SBIT (P03, SFR_P0, 3);                   // Pin 0.3 for MUX36D08 A1
 SI_SBIT (P04, SFR_P0, 4);                   // Pin 0.4 for MUX36D08 A2
+uint8_t mux36d08_state;                     // MUX36D08 state byte
 // MUX36D08 state function
 void MUX36D08_output(uint8_t);
 
@@ -114,13 +116,182 @@ main (void)
 {
   // SMBus reset
   enter_smbus_reset_from_RESET ();
-
+  while(!SDA){
+      SDA_Reset();
+  }
   // Initialize normal operation
   enter_DefaultMode_from_RESET ();
+  // SMBus comms
+  // Read data from NT3H
+  SMB_DATA_OUT[0] = MEMA;      // NT3H Address to Read
+  TARGET = SLAVE_ADDR;         // I2C slave address for NT3H is 0xAA
+  SMB_Write();                 // Write sequence with the MEMA as per NT3H data sheet
+  TARGET = SLAVE_ADDR;
+  SMB_Read();                  // Read MEMA address
+  // I2C data save
+  for(j=0; j<16; j++){
+      SAVE[j] = SMB_DATA_IN[j];   // Save read data
+  }
+  T_on_HB = SAVE[0]; // Pulse Width in chunks of 50 us high byte
+  T_on_LB = SAVE[1]; // Pulse Width in chunks of 50 us low byte
+  F_hz_HB = SAVE[2]; // Pulse frequency high byte
+  F_hz_LB = SAVE[3]; // Pulse frequency low byte
+  T_on = (T_on_HB<<8)|(T_on_LB); // Combine PW into single hex
+  F_hz = (F_hz_HB<<8)|(F_hz_LB); // Combine IPW into single hex
+  mux36d08_state = SAVE[4]; // save MUX36 switch state
+  Iset = SAVE[8];
 
-  while (1)
-    {
-// $[Generated Run-time code]
-// [Generated Run-time code]$
-    }
+  cycles = 20000 / F_hz; // number of cycles for 50 us/20 kHz timer for a given pulse frequency
+
+  P05 = 1;              // Enable LT8410, enable MUX36D08 and 2x MUX36S16
+
+  TMR2CN0 |= TMR2CN0_TR2__RUN; // Start Timer 2 for pulse generation
+  // Go into stimulation mode
+  Monophasic();
+}
+
+// Function declarations
+
+/*
+ * Function: Pulse_On
+ * --------------------
+ * Activates current reference at P0.7.
+ * Reads amplitude bit from SMBus as Iset.
+ */
+void Pulse_On(void){
+
+  IREF0CN0 = IREF0CN0_SINK__DISABLED | IREF0CN0_MDSEL__HIGH_CURRENT
+                        | (Iset << IREF0CN0_IREF0DAT__SHIFT);
+}
+
+void Pulse_Off(void){
+  IREF0CN0 = IREF0CN0_SINK__DISABLED | IREF0CN0_MDSEL__HIGH_CURRENT
+                            | (0x00 << IREF0CN0_IREF0DAT__SHIFT); // Current 0 mA
+}
+
+void Monophasic(void){
+  // Forward polarity
+  while(1) {
+      if (i_50us < T_on && isstim && set) {
+          Pulse_On();
+          set = 0;
+      }
+      else if (i_50us > T_on && isstim) {
+          Pulse_Off();
+          isstim = 0;
+          set = 1;
+      } // end if
+  } // end while
+}
+/* Function: Biphasic
+ * --------------------
+ * Uninterrupted Biphasic stimulation with set parameters
+ */
+void Biphasic(void){
+
+}
+
+/* Function: Biphasic_pulm
+ * --------------------
+ * Biphasic stimulation with the pulmonary protocol
+ */
+void Biphasic_pulm(void){
+
+}
+
+void SDA_Reset(void)
+{
+    uint8_t j;                    // Dummy variable counters
+    // Provide clock pulses to allow the slave to advance out
+    // of its current state. This will allow it to release SDA.
+    XBR1 = 0x40;                     // Enable Crossbar
+    SCL = 0;                         // Drive the clock low
+    for(j = 0; j < 255; j++);        // Hold the clock low
+    SCL = 1;                         // Release the clock
+    while(!SCL);                     // Wait for open-drain
+                     // clock output to rise
+    for(j = 0; j < 10; j++);         // Hold the clock high
+    XBR1 = 0x00;                     // Disable Crossbar
+}
+
+void SMB_Write (void)
+{
+   while (SMB_BUSY);                   // Wait for SMBus to be free.
+   SMB_BUSY = 1;                       // Claim SMBus (set to busy)
+   SMB_RW = 0;                         // Mark this transfer as a WRITE
+   SMB0CN0_STA = 1;                            // Start transfer
+}
+
+void SMB_Read (void)
+{
+   while (SMB_BUSY);               // Wait for bus to be free.
+   SMB_BUSY = 1;                       // Claim SMBus (set to busy)
+   SMB_RW = 1;                         // Mark this transfer as a READ
+
+   SMB0CN0_STA = 1;                            // Start transfer
+
+   while (SMB_BUSY);               // Wait for transfer to complete
+}
+
+/*
+ * Function: MUX36S16_output
+ * -------------------------------
+ * MUX36D08 output selection function
+ * Selects output channel of the stimulation.
+ *
+ * mux36s16_state:switch state read from NT3H.
+ * Switch state converted to corresponding bits that are set as control pins for MUX36
+ * as per MUX36 truth table.
+ * MUX36S16 truth table:
+ * EN A3 A2 A1 A0 ON-CHANNEL
+ * 0  X  X  X  X  All channels are off
+ * 1 0 0 0 0 Channel 1
+ * 1 0 0 0 1 Channel 2
+ * 1 0 0 1 0 Channel 3
+ * 1 0 0 1 1 Channel 4
+ * 1 0 1 0 0 Channel 5
+ * 1 0 1 0 1 Channel 6
+ * 1 0 1 1 0 Channel 7
+ * 1 0 1 1 1 Channel 8
+ * 1 1 0 0 0 Channel 9
+ * 1 1 0 0 1 Channel 10
+ * 1 1 0 1 0 Channel 11
+ * 1 1 0 1 1 Channel 12
+ * 1 1 1 0 0 Channel 13
+ * 1 1 1 0 1 Channel 14
+ * 1 1 1 1 0 Channel 15
+ * 1 1 1 1 1 Channel 16
+ */
+void MUX36S16_output(uint8_t mux36s16_state){
+  P17 = (mux36s16_state & (1 << (1-1))) ? 1 : 0; // Get 1st bit of MUX36S16 state byte
+  P16 = (mux36s16_state & (1 << (2-1))) ? 1 : 0; // Get 2nd bit of the state byte
+  P15 = (mux36s16_state & (1 << (3-1))) ? 1 : 0; // Get 3rd bit of the state byte
+  P14 = (mux36s16_state & (1 << (4-1))) ? 1 : 0; // Get 4th bit of the state byte
+}
+
+/*
+ * Function: MUX36D08_output
+ * -------------------------------
+ * MUX36D08 output selection function
+ * Selects output channel of the stimulation.
+ *
+ * mux36d08_state:switch state read from NT3H.
+ * Switch state converted to corresponding bits that are set as control pins for MUX36
+ * as per MUX36 truth table.
+ * MUX36D08 truth table:
+ * EN A2  A1  A0  ON-CHANNEL
+ * 0  X   X   X   All channels are off
+ * 1  0   0   0   Channels 1A and 1B
+ * 1  0   0   1   Channels 2A and 2B
+ * 1  0   1   0   Channels 3A and 3B
+ * 1  0   1   1   Channels 4A and 4B
+ * 1  1   0   0   Channels 5A and 5B
+ * 1  1   0   1   Channels 6A and 6B
+ * 1  1   1   0   Channels 7A and 7B
+ * 1  1   1   1   Channels 8A and 8B
+ */
+void MUX36D08_output(uint8_t mux36d08_state){
+  P02 = (mux36d08_state & (1 << (1-1))) ? 1 : 0; // Get 1st bit of MUX36D08 state byte
+  P03 = (mux36d08_state & (1 << (2-1))) ? 1 : 0; // Get 2nd bit of the state byte
+  P04 = (mux36d08_state & (1 << (3-1))) ? 1 : 0; // Get 3rd bit of the state byte
 }

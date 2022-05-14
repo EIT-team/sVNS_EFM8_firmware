@@ -70,7 +70,6 @@
     <property object="PCA_0" propertyId="pca.pcastartrun.pcacountertimerrunstatus" value="Stopped"/>
     <property object="PCA_0" propertyId="pca.watchdogcontrol.enablewatchdogtimer" value="Disabled"/>
     <property object="RSTSRC_0" propertyId="ABPeripheral.included" value="true"/>
-    <property object="RTC_0" propertyId="ABPeripheral.included" value="true"/>
     <property object="RTC_0" propertyId="rtc.hidden.rtcalarmprogrammedvalue0" value="20"/>
     <property object="RTC_0" propertyId="rtc.hidden.selectandenablelowfrequencyoscillator" value="Enabled"/>
     <property object="RTC_0" propertyId="rtc.rtcalarm.actualalarmperiod" value="1.22 milliseconds"/>
@@ -86,8 +85,14 @@
     <property object="SMBUS_0" propertyId="smbus.view.view" value="Advanced"/>
     <property object="TIMER01_0" propertyId="ABPeripheral.included" value="true"/>
     <property object="TIMER16_2" propertyId="ABPeripheral.included" value="true"/>
+    <property object="TIMER16_2" propertyId="timer16.control.clocksource" value="SYSCLK"/>
+    <property object="TIMER16_2" propertyId="timer16.initandreloadvalue.targetoverflowfrequency" value="20000"/>
+    <property object="TIMER16_2" propertyId="timer16.initandreloadvalue.timerreloadvalue" value="64536"/>
+    <property object="TIMER16_2" propertyId="timer16.reloadhighbyte.reloadhighbyte" value="252"/>
+    <property object="TIMER16_2" propertyId="timer16.reloadlowbyte.reloadlowbyte" value="24"/>
     <property object="TIMER16_3" propertyId="ABPeripheral.included" value="true"/>
     <property object="TIMER_SETUP_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.clockcontrol.timer2lowbyteclockselect" value="Use SYSCLK"/>
     <property object="TIMER_SETUP_0" propertyId="timer_setup.timer0.mode" value="Mode 1, 16-bit Counter/Timer"/>
     <property object="TIMER_SETUP_0" propertyId="timer_setup.timer1.mode" value="Mode 1, 16-bit Counter/Timer"/>
     <property object="VREF_0" propertyId="ABPeripheral.included" value="true"/>
