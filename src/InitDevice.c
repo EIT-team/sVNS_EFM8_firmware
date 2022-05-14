@@ -508,3 +508,546 @@ PBCFG_0_enter_DefaultMode_from_RESET (void)
 
 }
 
+extern void
+enter_smbus_reset_from_RESET (void)
+{
+  // $[Config Calls]
+  // Save the SFRPAGE
+  uint8_t SFRPAGE_save = SFRPAGE;
+  PCA_0_enter_smbus_reset_from_RESET ();
+  PBCFG_0_enter_smbus_reset_from_RESET ();
+  // Restore the SFRPAGE
+  SFRPAGE = SFRPAGE_save;
+  // [Config Calls]$
+
+}
+
+extern void
+enter_DefaultMode_from_smbus_reset (void)
+{
+  // $[Config Calls]
+  // Save the SFRPAGE
+  uint8_t SFRPAGE_save = SFRPAGE;
+  PCA_0_enter_DefaultMode_from_smbus_reset ();
+  PCACH_2_enter_DefaultMode_from_smbus_reset ();
+  PORTS_0_enter_DefaultMode_from_smbus_reset ();
+  PORTS_1_enter_DefaultMode_from_smbus_reset ();
+  PBCFG_0_enter_DefaultMode_from_smbus_reset ();
+  CLOCK_0_enter_DefaultMode_from_smbus_reset ();
+  RTC_0_enter_DefaultMode_from_smbus_reset ();
+  TIMER_SETUP_0_enter_DefaultMode_from_smbus_reset ();
+  ADC_0_enter_DefaultMode_from_smbus_reset ();
+  IREF_0_enter_DefaultMode_from_smbus_reset ();
+  SMBUS_0_enter_DefaultMode_from_smbus_reset ();
+  INTERRUPT_0_enter_DefaultMode_from_smbus_reset ();
+  // Restore the SFRPAGE
+  SFRPAGE = SFRPAGE_save;
+  // [Config Calls]$
+
+}
+
+extern void
+PCA_0_enter_DefaultMode_from_smbus_reset (void)
+{
+  // $[PCA0MD - PCA Mode]
+  // [PCA0MD - PCA Mode]$
+
+  // $[PCA0H - PCA Counter/Timer High Byte]
+  // [PCA0H - PCA Counter/Timer High Byte]$
+
+  // $[PCA0L - PCA Counter/Timer Low Byte]
+  // [PCA0L - PCA Counter/Timer Low Byte]$
+
+  // $[PCA0PWM - PCA PWM Configuration]
+  // [PCA0PWM - PCA PWM Configuration]$
+
+  // $[PCA0CN0 - PCA Control 0]
+  // [PCA0CN0 - PCA Control 0]$
+
+}
+
+extern void
+PCACH_2_enter_DefaultMode_from_smbus_reset (void)
+{
+  // $[PCA0 Settings Save]
+  SFRPAGE = 0x00;
+  // Select Capture/Compare register)
+  PCA0PWM &= ~PCA0PWM_ARSEL__BMASK;
+  // [PCA0 Settings Save]$
+
+  // $[PCA0CPM2 - PCA Channel 2 Capture/Compare Mode]
+  /***********************************************************************
+   - Disable negative edge capture
+   - Disable CCF2 interrupts
+   - Enable match function
+   - 8 to 11-bit PWM selected
+   - Disable positive edge capture
+   - Disable comparator function
+   - Disable PWM function
+   - Disable toggle function
+   ***********************************************************************/
+  PCA0CPM2 = PCA0CPM2_CAPN__DISABLED | PCA0CPM2_ECCF__DISABLED
+      | PCA0CPM2_MAT__ENABLED | PCA0CPM2_PWM16__8_BIT | PCA0CPM2_CAPP__DISABLED
+      | PCA0CPM2_ECOM__DISABLED | PCA0CPM2_PWM__DISABLED
+      | PCA0CPM2_TOG__DISABLED;
+  // [PCA0CPM2 - PCA Channel 2 Capture/Compare Mode]$
+
+  // $[PCA0CPL2 - PCA Channel 2 Capture Module Low Byte]
+  // [PCA0CPL2 - PCA Channel 2 Capture Module Low Byte]$
+
+  // $[PCA0CPH2 - PCA Channel 2 Capture Module High Byte]
+  PCA0CPH2 = 0x00;
+  // [PCA0CPH2 - PCA Channel 2 Capture Module High Byte]$
+
+  // $[Auto-reload]
+  // [Auto-reload]$
+
+  // $[PCA0 Settings Restore]
+  // [PCA0 Settings Restore]$
+
+}
+
+extern void
+PORTS_0_enter_DefaultMode_from_smbus_reset (void)
+{
+  // $[P0 - Port 0 Pin Latch]
+  // [P0 - Port 0 Pin Latch]$
+
+  // $[P0MDOUT - Port 0 Output Mode]
+  /***********************************************************************
+   - P0.0 output is open-drain
+   - P0.1 output is open-drain
+   - P0.2 output is push-pull
+   - P0.3 output is push-pull
+   - P0.4 output is push-pull
+   - P0.5 output is push-pull
+   - P0.6 output is open-drain
+   - P0.7 output is open-drain
+   ***********************************************************************/
+  P0MDOUT = P0MDOUT_B0__OPEN_DRAIN | P0MDOUT_B1__OPEN_DRAIN
+      | P0MDOUT_B2__PUSH_PULL | P0MDOUT_B3__PUSH_PULL | P0MDOUT_B4__PUSH_PULL
+      | P0MDOUT_B5__PUSH_PULL | P0MDOUT_B6__OPEN_DRAIN | P0MDOUT_B7__OPEN_DRAIN;
+  // [P0MDOUT - Port 0 Output Mode]$
+
+  // $[P0MDIN - Port 0 Input Mode]
+  /***********************************************************************
+   - P0.0 pin is configured for digital mode
+   - P0.1 pin is configured for digital mode
+   - P0.2 pin is configured for digital mode
+   - P0.3 pin is configured for digital mode
+   - P0.4 pin is configured for digital mode
+   - P0.5 pin is configured for digital mode
+   - P0.6 pin is configured for analog mode
+   - P0.7 pin is configured for analog mode
+   ***********************************************************************/
+  P0MDIN = P0MDIN_B0__DIGITAL | P0MDIN_B1__DIGITAL | P0MDIN_B2__DIGITAL
+      | P0MDIN_B3__DIGITAL | P0MDIN_B4__DIGITAL | P0MDIN_B5__DIGITAL
+      | P0MDIN_B6__ANALOG | P0MDIN_B7__ANALOG;
+  // [P0MDIN - Port 0 Input Mode]$
+
+  // $[P0SKIP - Port 0 Skip]
+  /***********************************************************************
+   - P0.0 pin is not skipped by the crossbar
+   - P0.1 pin is not skipped by the crossbar
+   - P0.2 pin is skipped by the crossbar
+   - P0.3 pin is skipped by the crossbar
+   - P0.4 pin is skipped by the crossbar
+   - P0.5 pin is skipped by the crossbar
+   - P0.6 pin is skipped by the crossbar
+   - P0.7 pin is skipped by the crossbar
+   ***********************************************************************/
+  P0SKIP = P0SKIP_B0__NOT_SKIPPED | P0SKIP_B1__NOT_SKIPPED | P0SKIP_B2__SKIPPED
+      | P0SKIP_B3__SKIPPED | P0SKIP_B4__SKIPPED | P0SKIP_B5__SKIPPED
+      | P0SKIP_B6__SKIPPED | P0SKIP_B7__SKIPPED;
+  // [P0SKIP - Port 0 Skip]$
+
+  // $[P0MASK - Port 0 Mask]
+  // [P0MASK - Port 0 Mask]$
+
+  // $[P0MAT - Port 0 Match]
+  // [P0MAT - Port 0 Match]$
+
+  // $[P0DRV - Port 0 Drive Strength]
+  // [P0DRV - Port 0 Drive Strength]$
+
+}
+
+extern void
+PORTS_1_enter_DefaultMode_from_smbus_reset (void)
+{
+  // $[P1 - Port 1 Pin Latch]
+  // [P1 - Port 1 Pin Latch]$
+
+  // $[P1MDOUT - Port 1 Output Mode]
+  /***********************************************************************
+   - P1.0 output is open-drain
+   - P1.1 output is open-drain
+   - P1.2 output is open-drain
+   - P1.3 output is open-drain
+   - P1.4 output is push-pull
+   - P1.5 output is push-pull
+   - P1.6 output is push-pull
+   - P1.7 output is push-pull
+   ***********************************************************************/
+  P1MDOUT = P1MDOUT_B0__OPEN_DRAIN | P1MDOUT_B1__OPEN_DRAIN
+      | P1MDOUT_B2__OPEN_DRAIN | P1MDOUT_B3__OPEN_DRAIN | P1MDOUT_B4__PUSH_PULL
+      | P1MDOUT_B5__PUSH_PULL | P1MDOUT_B6__PUSH_PULL | P1MDOUT_B7__PUSH_PULL;
+  // [P1MDOUT - Port 1 Output Mode]$
+
+  // $[P1MDIN - Port 1 Input Mode]
+  // [P1MDIN - Port 1 Input Mode]$
+
+  // $[P1SKIP - Port 1 Skip]
+  /***********************************************************************
+   - P1.0 pin is skipped by the crossbar
+   - P1.1 pin is not skipped by the crossbar
+   - P1.2 pin is not skipped by the crossbar
+   - P1.3 pin is not skipped by the crossbar
+   - P1.4 pin is skipped by the crossbar
+   - P1.5 pin is skipped by the crossbar
+   - P1.6 pin is skipped by the crossbar
+   - P1.7 pin is skipped by the crossbar
+   ***********************************************************************/
+  P1SKIP = P1SKIP_B0__SKIPPED | P1SKIP_B1__NOT_SKIPPED | P1SKIP_B2__NOT_SKIPPED
+      | P1SKIP_B3__NOT_SKIPPED | P1SKIP_B4__SKIPPED | P1SKIP_B5__SKIPPED
+      | P1SKIP_B6__SKIPPED | P1SKIP_B7__SKIPPED;
+  // [P1SKIP - Port 1 Skip]$
+
+  // $[Missing Pin Skip]
+  // [Missing Pin Skip]$
+
+  // $[P1MASK - Port 1 Mask]
+  // [P1MASK - Port 1 Mask]$
+
+  // $[P1MAT - Port 1 Match]
+  // [P1MAT - Port 1 Match]$
+
+  // $[P1DRV - Port 1 Drive Strength]
+  // [P1DRV - Port 1 Drive Strength]$
+
+}
+
+extern void
+PBCFG_0_enter_DefaultMode_from_smbus_reset (void)
+{
+  // $[XBR2 - Port I/O Crossbar 2]
+  // [XBR2 - Port I/O Crossbar 2]$
+
+  // $[XBR0 - Port I/O Crossbar 0]
+  /***********************************************************************
+   - UART I/O unavailable at Port pin
+   - SPI I/O unavailable at Port pins
+   - SMBus 0 I/O routed to Port pins
+   - CP0 unavailable at Port pin
+   - Asynchronous CP0 unavailable at Port pin
+   - SYSCLK unavailable at Port pin
+   ***********************************************************************/
+  XBR0 = XBR0_URT0E__DISABLED | XBR0_SPI0E__DISABLED | XBR0_SMB0E__ENABLED
+      | XBR0_CP0E__DISABLED | XBR0_CP0AE__DISABLED | XBR0_SYSCKE__DISABLED;
+  // [XBR0 - Port I/O Crossbar 0]$
+
+  // $[XBR1 - Port I/O Crossbar 1]
+  // [XBR1 - Port I/O Crossbar 1]$
+
+}
+
+extern void
+CLOCK_0_enter_DefaultMode_from_smbus_reset (void)
+{
+  // $[CLKSEL - Clock Select]
+  /***********************************************************************
+   - SYSCLK is equal to selected clock source divided by 1
+   - Clock derived from the Internal Low Power Oscillator
+   ***********************************************************************/
+  CLKSEL = CLKSEL_CLKDIV__SYSCLK_DIV_1 | CLKSEL_CLKSL__LPOSC;
+  // Wait for the clock to be ready
+  while ((CLKSEL & CLKSEL_CLKRDY__BMASK) != CLKSEL_CLKRDY__SET)
+    ;
+  // [CLKSEL - Clock Select]$
+
+}
+
+extern void
+RTC_0_enter_DefaultMode_from_smbus_reset (void)
+{
+  // $[RTC Initialization]
+  // [RTC Initialization]$
+
+  // $[RTC0XCN0 - RTC Oscillator Control: Initial start-up setting]
+  // [RTC0XCN0 - RTC Oscillator Control: Initial start-up setting]$
+
+  // $[RTC0XCN - RTC Oscillator Control]
+  /***********************************************************************
+   - Self-Oscillate Mode selected
+   - Disable AGC
+   - Disable the Bias Double feature
+   - LFOSC0 enabled and selected as RTC oscillator source
+   ***********************************************************************/
+  RTC0ADR = RTC0XCN0;
+  RTC0DAT = RTC0XCN0_XMODE__SELF_OSCILLATE | RTC0XCN0_AGCEN__DISABLED
+      | RTC0XCN0_BIASX2__DISABLED | RTC0XCN0_LFOEN__ENABLED;
+  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
+    ;    //Poll Busy Bit
+  // [RTC0XCN - RTC Oscillator Control]$
+
+  // $[RTC0XCF - RTC Oscillator Configuration]
+  // [RTC0XCF - RTC Oscillator Configuration]$
+
+  // $[CAPTURE0 - RTC Timer Capture 0]
+  // [CAPTURE0 - RTC Timer Capture 0]$
+
+  // $[CAPTURE1 - RTC Timer Capture 1]
+  // [CAPTURE1 - RTC Timer Capture 1]$
+
+  // $[CAPTURE2 - RTC Timer Capture 2]
+  // [CAPTURE2 - RTC Timer Capture 2]$
+
+  // $[CAPTURE3 - RTC Timer Capture 3]
+  // [CAPTURE3 - RTC Timer Capture 3]$
+
+  // $[ALARM0 - RTC Alarm Programmed Value 0]
+  /***********************************************************************
+   - RTC Alarm Programmed Value 0 = 0x14
+   ***********************************************************************/
+  RTC0ADR = ALARM0;
+  RTC0DAT = (0x14 << ALARM0_ALARM0__SHIFT);
+  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
+    ;    //Poll Busy Bit
+  // [ALARM0 - RTC Alarm Programmed Value 0]$
+
+  // $[ALARM1 - RTC Alarm Programmed Value 1]
+  // [ALARM1 - RTC Alarm Programmed Value 1]$
+
+  // $[ALARM2 - RTC Alarm Programmed Value 2]
+  // [ALARM2 - RTC Alarm Programmed Value 2]$
+
+  // $[ALARM3 - RTC Alarm Programmed Value 3]
+  // [ALARM3 - RTC Alarm Programmed Value 3]$
+
+  // $[RTC0CN - RTC Control]
+  /***********************************************************************
+   - Disable RTC oscillator
+   - RTC timer is stopped
+   - Enable missing RTC detector
+   - Disable RTC alarm
+   - Alarm event flag is not set or disable the auto reset function
+   - Do not start a capture operation
+   - Do not start a set operation
+   ***********************************************************************/
+  RTC0ADR = RTC0CN0;
+  RTC0DAT = RTC0CN0_RTC0EN__DISABLED | RTC0CN0_RTC0TR__STOP
+      | RTC0CN0_MCLKEN__ENABLED | RTC0CN0_RTC0AEN__DISABLED
+      | RTC0CN0_ALRM__NOT_SET | RTC0CN0_RTC0CAP__NOT_SET
+      | RTC0CN0_RTC0SET__NOT_SET;
+  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
+    ;    //Poll Busy Bit
+
+  // [RTC0CN - RTC Control]$
+
+  // $[External Oscillator Setup]
+  // [External Oscillator Setup]$
+
+}
+
+extern void
+TIMER_SETUP_0_enter_DefaultMode_from_smbus_reset (void)
+{
+  // $[CKCON0 - Clock Control 0]
+  // [CKCON0 - Clock Control 0]$
+
+  // $[TMOD - Timer 0/1 Mode]
+  /***********************************************************************
+   - Mode 1, 16-bit Counter/Timer
+   - Mode 1, 16-bit Counter/Timer
+   - Timer Mode
+   - Timer 0 enabled when TR0 = 1 irrespective of INT0 logic level
+   - Timer Mode
+   - Timer 1 enabled when TR1 = 1 irrespective of INT1 logic level
+   ***********************************************************************/
+  TMOD = TMOD_T0M__MODE1 | TMOD_T1M__MODE1 | TMOD_CT0__TIMER
+      | TMOD_GATE0__DISABLED | TMOD_CT1__TIMER | TMOD_GATE1__DISABLED;
+  // [TMOD - Timer 0/1 Mode]$
+
+  // $[TCON - Timer 0/1 Control]
+  // [TCON - Timer 0/1 Control]$
+
+}
+
+extern void
+ADC_0_enter_DefaultMode_from_smbus_reset (void)
+{
+  // $[ADC0MX - ADC0 Multiplexer Selection]
+  /***********************************************************************
+   - Select channel ADC0.6
+   ***********************************************************************/
+  ADC0MX = ADC0MX_ADC0MX__ADC0P6;
+  // [ADC0MX - ADC0 Multiplexer Selection]$
+
+  // $[ADC0AC - ADC0 Accumulator Configuration]
+  // [ADC0AC - ADC0 Accumulator Configuration]$
+
+  // $[ADC0TK - ADC0 Burst Mode Track Time]
+  // [ADC0TK - ADC0 Burst Mode Track Time]$
+
+  // $[ADC0PWR - ADC0 Power Control]
+  // [ADC0PWR - ADC0 Power Control]$
+
+  // $[ADC0CF - ADC0 Configuration]
+  /***********************************************************************
+   - ADC0 operates in 10-bit or 12-bit mode 
+   - The on-chip PGA gain is 0.5
+   - SAR Clock Divider = 0x02
+   - Normal Track Mode
+   ***********************************************************************/
+  ADC0CF = ADC0CF_AD8BE__NORMAL | ADC0CF_ADGN__GAIN_0P5
+      | (0x02 << ADC0CF_ADSC__SHIFT) | ADC0CF_ADTM__TRACK_NORMAL;
+  // [ADC0CF - ADC0 Configuration]$
+
+  // $[ADC0GTH - ADC0 Greater-Than High Byte]
+  /***********************************************************************
+   - Greater-Than High Byte = 0x00
+   ***********************************************************************/
+  ADC0GTH = (0x00 << ADC0GTH_ADC0GTH__SHIFT);
+  // [ADC0GTH - ADC0 Greater-Than High Byte]$
+
+  // $[ADC0GTL - ADC0 Greater-Than Low Byte]
+  /***********************************************************************
+   - Greater-Than Low Byte = 0x00
+   ***********************************************************************/
+  ADC0GTL = (0x00 << ADC0GTL_ADC0GTL__SHIFT);
+  // [ADC0GTL - ADC0 Greater-Than Low Byte]$
+
+  // $[ADC0LTH - ADC0 Less-Than High Byte]
+  // [ADC0LTH - ADC0 Less-Than High Byte]$
+
+  // $[ADC0LTL - ADC0 Less-Than Low Byte]
+  // [ADC0LTL - ADC0 Less-Than Low Byte]$
+
+  // $[ADC0CN0 - ADC0 Control 0]
+  /***********************************************************************
+   - Enable ADC0 
+   ***********************************************************************/
+  ADC0CN0 |= ADC0CN0_ADEN__ENABLED;
+  // [ADC0CN0 - ADC0 Control 0]$
+
+}
+
+extern void
+IREF_0_enter_DefaultMode_from_smbus_reset (void)
+{
+  // $[IREF0CN - Current Reference Control]
+  // [IREF0CN - Current Reference Control]$
+
+  // $[IREF0CF - Current Reference Configuration]
+  // [IREF0CF - Current Reference Configuration]$
+
+}
+
+extern void
+SMBUS_0_enter_DefaultMode_from_smbus_reset (void)
+{
+  // $[SMB0ADR - SMBus 0 Slave Address]
+  // [SMB0ADR - SMBus 0 Slave Address]$
+
+  // $[SMB0ADM - SMBus 0 Slave Address Mask]
+  // [SMB0ADM - SMBus 0 Slave Address Mask]$
+
+  // $[SMB0CF - SMBus 0 Configuration]
+  /***********************************************************************
+   - Slave states are inhibited
+   - Enable the SMBus module
+   ***********************************************************************/
+  SMB0CF |= SMB0CF_INH__SLAVE_DISABLED | SMB0CF_ENSMB__ENABLED;
+  // [SMB0CF - SMBus 0 Configuration]$
+
+}
+
+extern void
+INTERRUPT_0_enter_DefaultMode_from_smbus_reset (void)
+{
+  // $[EIE1 - Extended Interrupt Enable 1]
+  // [EIE1 - Extended Interrupt Enable 1]$
+
+  // $[EIP1 - Extended Interrupt Priority 1]
+  // [EIP1 - Extended Interrupt Priority 1]$
+
+  // $[IE - Interrupt Enable]
+  /***********************************************************************
+   - Enable each interrupt according to its individual mask setting
+   - Disable external interrupt 0
+   - Disable external interrupt 1
+   - Disable all SPI0 interrupts
+   - Disable all Timer 0 interrupt
+   - Disable all Timer 1 interrupt
+   - Disable Timer 2 interrupt
+   - Disable UART0 interrupt
+   ***********************************************************************/
+  IE = IE_EA__ENABLED | IE_EX0__DISABLED | IE_EX1__DISABLED | IE_ESPI0__DISABLED
+      | IE_ET0__DISABLED | IE_ET1__DISABLED | IE_ET2__DISABLED
+      | IE_ES0__DISABLED;
+  // [IE - Interrupt Enable]$
+
+  // $[IP - Interrupt Priority]
+  // [IP - Interrupt Priority]$
+
+  // $[EIE2 - Extended Interrupt Enable 2]
+  // [EIE2 - Extended Interrupt Enable 2]$
+
+  // $[EIP2 - Extended Interrupt Priority 2]
+  // [EIP2 - Extended Interrupt Priority 2]$
+
+}
+
+extern void
+PCA_0_enter_smbus_reset_from_RESET (void)
+{
+  // $[PCA0MD - PCA Mode]
+  /***********************************************************************
+   - Disable Watchdog Timer
+   - System clock divided by 12
+   - PCA continues to function normally while the system controller is in
+   Idle Mode
+   - Disable the CF interrupt
+   - Disable Watchdog Timer
+   - Watchdog Timer Enable unlocked
+   ***********************************************************************/
+  SFRPAGE = 0x00;
+  PCA0MD &= ~PCA0MD_WDTE__BMASK;
+  PCA0MD = PCA0MD_CPS__SYSCLK_DIV_12 | PCA0MD_CIDL__NORMAL
+      | PCA0MD_ECF__OVF_INT_DISABLED | PCA0MD_WDTE__DISABLED
+      | PCA0MD_WDLCK__UNLOCKED;
+  // [PCA0MD - PCA Mode]$
+
+  // $[PCA0H - PCA Counter/Timer High Byte]
+  // [PCA0H - PCA Counter/Timer High Byte]$
+
+  // $[PCA0L - PCA Counter/Timer Low Byte]
+  // [PCA0L - PCA Counter/Timer Low Byte]$
+
+  // $[PCA0PWM - PCA PWM Configuration]
+  // [PCA0PWM - PCA PWM Configuration]$
+
+  // $[PCA0CN0 - PCA Control 0]
+  // [PCA0CN0 - PCA Control 0]$
+
+}
+
+extern void
+PBCFG_0_enter_smbus_reset_from_RESET (void)
+{
+  // $[XBR2 - Port I/O Crossbar 2]
+  /***********************************************************************
+   - Weak Pullups enabled 
+   - Crossbar enabled
+   ***********************************************************************/
+  XBR2 = XBR2_WEAKPUD__PULL_UPS_ENABLED | XBR2_XBARE__ENABLED;
+  // [XBR2 - Port I/O Crossbar 2]$
+
+  // $[XBR0 - Port I/O Crossbar 0]
+  // [XBR0 - Port I/O Crossbar 0]$
+
+  // $[XBR1 - Port I/O Crossbar 1]
+  // [XBR1 - Port I/O Crossbar 1]$
+
+}
+

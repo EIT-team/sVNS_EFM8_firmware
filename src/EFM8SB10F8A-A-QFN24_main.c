@@ -9,10 +9,87 @@
 //-----------------------------------------------------------------------------
 // Includes
 //-----------------------------------------------------------------------------
+#include <si_toolchain.h>
 #include <SI_EFM8SB1_Register_Enums.h>                  // SFR declarations
 #include "InitDevice.h"
+#include "EFM8SB1_SMBus_Master_Multibyte.h"
+
 // $[Generated Includes]
 // [Generated Includes]$
+
+//-----------------------------------------------------------------------------
+// Application-component specific constants and variables
+//-----------------------------------------------------------------------------
+
+// Stimulation
+// P0.7 - IREF
+uint8_t T_on_HB;
+uint8_t T_on_LB;
+uint8_t T_on;
+uint8_t F_hz_HB;
+uint8_t F_hz_LB;
+uint8_t F_hz;
+uint8_t Iset;
+bool stimDelivering;
+extern volatile uint16_t i_50us;
+extern volatile uint32_t timer2;
+uint8_t set = 1;
+uint8_t j;
+float cycles;
+uint32_t chunks_30 = 30e6 / 50; // holds how many chunks of 50 us fit in 30 seconds pulse train/pulse off period
+volatile uint8_t isstim = 0;
+// Stimulation function prototypes
+void Pulse_On(void);
+void Pulse_Off(void);
+void Monophasic(void);
+void Biphasic(void);
+void Biphasic_pulm(void);
+
+
+// I2C
+// P0.0 - SMBus SDA
+// P0.1 - SMBus SCL
+#define MEMA  0x01 // NT3H memory address
+uint8_t SMB_DATA_OUT[NUM_BYTES_WR];
+uint8_t SMB_DATA_IN[NUM_BYTES_RD];
+uint8_t SAVE[16];
+uint8_t TARGET;                             // Target SMBus slave address
+volatile bool SMB_BUSY;
+volatile bool SMB_RW;
+uint16_t NUM_ERRORS;
+uint8_t SMB_DATA_OUT[NUM_BYTES_WR];
+uint8_t SMB_DATA_IN[NUM_BYTES_RD];
+uint8_t SAVE[16];
+uint8_t TARGET;                             // Target SMBus slave address
+volatile bool SMB_BUSY;
+volatile bool SMB_RW;
+uint16_t NUM_ERRORS;
+SI_SBIT (SDA, SFR_P0, 0);                   // SMBus on P0.0
+SI_SBIT (SCL, SFR_P0, 1);                   // and P0.1
+
+// I2C function prototypes
+void SMB_Write (void);
+void SMB_Read (void);
+void T0_Waitms (uint8_t ms);
+void SDA_Reset(void);
+
+// LT8410, MUX36 shutdown pin
+SI_SBIT (P05, SFR_P0, 5);                   // Pin 0.5 for SHDN enable/disable
+
+// MUX36S16 - H-bridge multiplexer, pins 1.4 - 1.7
+SI_SBIT (P17, SFR_P1, 7);                   // Pin 1.7 for MUX36S16 A0
+SI_SBIT (P16, SFR_P1, 6);                   // Pin 1.6 for MUX36S16 A1
+SI_SBIT (P15, SFR_P1, 5);                   // Pin 1.5 for MUX36S16 A2
+SI_SBIT (P14, SFR_P1, 4);                   // Pin 1.4 for MUX36S16 A3
+// MUX36S16 state function
+void MUX36S16_output(uint8_t);
+
+// MUX36D08 - multiplexer for output channels, pins 0.2 - 0.4
+SI_SBIT (P02, SFR_P0, 2);                   // Pin 0.2 for MUX36D08 A0
+SI_SBIT (P03, SFR_P0, 3);                   // Pin 0.3 for MUX36D08 A1
+SI_SBIT (P04, SFR_P0, 4);                   // Pin 0.4 for MUX36D08 A2
+// MUX36D08 state function
+void MUX36D08_output(uint8_t);
 
 //-----------------------------------------------------------------------------
 // SiLabs_Startup() Routine
@@ -35,7 +112,10 @@ SiLabs_Startup (void)
 int
 main (void)
 {
-  // Call hardware initialization routine
+  // SMBus reset
+  enter_smbus_reset_from_RESET ();
+
+  // Initialize normal operation
   enter_DefaultMode_from_RESET ();
 
   while (1)
