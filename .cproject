@@ -291,7 +291,7 @@
         	
     </storageModule>
     	
-    <storageModule moduleId="com.silabs.ss.framework.ide.project.core.cpp" project.generation="137" projectCommon.boardIds="com.silabs.board.none:0.0.0" projectCommon.buildArtifactType="EXE" projectCommon.copiedFiles="[{&quot;generated&quot;:false,&quot;projectPath&quot;:&quot;src/SILABS_STARTUP.A51&quot;,&quot;originalPath&quot;:&quot;C:\\Users\\edvar\\AppData\\Local\\Temp\\expandedFile18093602801412175464&quot;,&quot;version&quot;:1,&quot;content&quot;:-1772833452},{&quot;generated&quot;:false,&quot;projectPath&quot;:&quot;src/EFM8SB10F8A-A-QFN24_main.c&quot;,&quot;originalPath&quot;:&quot;C:\\Users\\edvar\\AppData\\Local\\Temp\\expandedFile12334394351961188570&quot;,&quot;version&quot;:1,&quot;content&quot;:-1872935955}]" projectCommon.ideId="simplicity-ide" projectCommon.importModeId="COPY" projectCommon.partId="mcu.8051.efm8.sb1.efm8sb10f8a-a-qfn24" projectCommon.sdkId="com.silabs.sdk.8051:4.2.2.0_-1219907952" projectCommon.toolchainId="com.silabs.ss.tool.ide.c8051.toolchain.keil.cdt:9.60.0"/>
+    <storageModule moduleId="com.silabs.ss.framework.ide.project.core.cpp" project.generation="139" projectCommon.boardIds="com.silabs.board.none:0.0.0" projectCommon.buildArtifactType="EXE" projectCommon.copiedFiles="[{&quot;generated&quot;:false,&quot;projectPath&quot;:&quot;src/SILABS_STARTUP.A51&quot;,&quot;originalPath&quot;:&quot;C:\\Users\\edvar\\AppData\\Local\\Temp\\expandedFile18093602801412175464&quot;,&quot;version&quot;:1,&quot;content&quot;:-1772833452},{&quot;generated&quot;:false,&quot;projectPath&quot;:&quot;src/EFM8SB10F8A-A-QFN24_main.c&quot;,&quot;originalPath&quot;:&quot;C:\\Users\\edvar\\AppData\\Local\\Temp\\expandedFile12334394351961188570&quot;,&quot;version&quot;:1,&quot;content&quot;:-1872935955}]" projectCommon.ideId="simplicity-ide" projectCommon.importModeId="COPY" projectCommon.partId="mcu.8051.efm8.sb1.efm8sb10f8a-a-qfn24" projectCommon.sdkId="com.silabs.sdk.8051:4.2.2.0_-1219907952" projectCommon.toolchainId="com.silabs.ss.tool.ide.c8051.toolchain.keil.cdt:9.60.0"/>
     	
     <storageModule moduleId="cdtBuildSystem" version="4.0.0">
         		
@@ -320,5 +320,7 @@
     </storageModule>
     	
     <storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
+    	
+    <storageModule moduleId="refreshScope"/>
     
 </cproject>

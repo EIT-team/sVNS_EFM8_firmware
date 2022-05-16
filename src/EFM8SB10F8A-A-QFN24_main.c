@@ -37,7 +37,7 @@ uint8_t set = 1;
 uint8_t j;
 float cycles;
 uint32_t chunks_30 = 30e6 / 50; // holds how many chunks of 50 us fit in 30 seconds pulse train/pulse off period
-volatile uint8_t isstim = 0;
+volatile uint8_t isstim = 1;
 // Stimulation function prototypes
 void Polarity(uint8_t);
 void Pulse_On(void);
@@ -45,7 +45,6 @@ void Pulse_Off(void);
 void Monophasic(void);
 void Biphasic(void);
 void Biphasic_pulm(void);
-
 
 // I2C
 // P0.0 - SMBus SDA
@@ -112,7 +111,7 @@ SiLabs_Startup (void)
 //-----------------------------------------------------------------------------
 // main() Routine
 // ----------------------------------------------------------------------------
-int
+void
 main (void)
 {
   // SMBus reset
@@ -121,7 +120,7 @@ main (void)
       SDA_Reset();
   }
   // Initialize normal operation
-  enter_DefaultMode_from_RESET ();
+  enter_DefaultMode_from_smbus_reset ();
   // SMBus comms
   // Read data from NT3H
   SMB_DATA_OUT[0] = MEMA;      // NT3H Address to Read
@@ -153,15 +152,15 @@ main (void)
 
 // Function declarations
 
-void Polarity(uint8_t polar) {
+void Polarity(char polar) {
   switch (polar) {
-  case "FW" :
+  case 1: // Forward polarity
     MUX36D08_output(0x01);
     break;
-  case "REV" :
+  case 2: // Reversed polarity
     MUX36D08_output(0x02);
     break;
-  case "SH" :
+  case 0: // Shunted
     MUX36D08_output(0x00);
     break;
   }
@@ -184,7 +183,7 @@ void Pulse_Off(void){
 }
 
 void Monophasic(void){
-  Polarity("FW"); // Forward polarity
+  Polarity(1); // Forward polarity
   while(1) {
       if (i_50us < T_on && isstim && set) {
           Pulse_On();
@@ -206,22 +205,22 @@ void Biphasic(void){
   uint8_t half_T_on = T_on / 2;
   uint8_t set_biphasic = 0;
   // start shunted
-  Polarity("SH");
+  Polarity(3);
   while(1) {
       if (i_50us <= half_T_on && isstim && set){
-          Polarity("FW");   // Forward polarity
+          Polarity(1);   // Forward polarity
           Pulse_On();
           set = 0;
           set_biphasic = 1;
       }
       else if ((half_T_on < i_50us && i_50us <= T_on) && isstim && set_biphasic){
-          Polarity("SH");   // Shunted
-          Polarity("REV");  // Reverse
+          Polarity(3);   // Shunted
+          Polarity(2);  // Reverse
           set = 0;
           set_biphasic = 0;
       }
       else if (i_50us > T_on && isstim) {
-          Polarity("SH");   // Shunted
+          Polarity(3);   // Shunted
           Pulse_Off();
           isstim = 0;
           set = 1;
@@ -245,19 +244,19 @@ void Biphasic_pulm(void){
           MUX36S16_output(mux36s16_state);    // Open stimulation channel.
           while (timer2 < chunks_15s) {
               if (i_50us <= half_T_on && isstim && set){
-                Polarity("FW"); // Forward polarity
+                Polarity(1); // Forward polarity
                 Pulse_On();
                 set = 0;
                 set_biphasic = 1;
               }
               else if ((half_T_on < i_50us && i_50us <= T_on) && isstim && set_biphasic){
-                  Polarity("SH");   // Shunted
-                  Polarity("REV");  // Reversed
+                  Polarity(3);   // Shunted
+                  Polarity(2);  // Reversed
                   set = 0;
                   set_biphasic = 0;
               }
               else if (i_50us > T_on && isstim) {
-                  Polarity("SH");
+                  Polarity(3);
                   Pulse_Off();
                   isstim = 0;
                   set = 1;

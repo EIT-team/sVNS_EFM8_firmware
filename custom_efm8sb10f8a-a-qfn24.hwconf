@@ -5,7 +5,7 @@
     <property object="ADC_0" propertyId="adc.configuration.sarclockdivider" value="3"/>
     <property object="ADC_0" propertyId="adc.configuration.sarclockdividerreal" value="2"/>
     <property object="ADC_0" propertyId="adc.control.enableadc" value="Enabled"/>
-    <property object="ADC_0" propertyId="adc.control.timer3overflowfrequency" value="25.000 Hz"/>
+    <property object="ADC_0" propertyId="adc.control.timer3overflowfrequency" value="39.000 Hz"/>
     <property object="ADC_0" propertyId="adc.multiplexerselection.positiveinputselection" value="ADC0.6 (P0.6)"/>
     <property object="ADC_0" propertyId="adc.view.view" value="Advanced"/>
     <property object="ADC_0" propertyId="adc.windowcompare.greaterthanhighbyte" value="0"/>
@@ -15,7 +15,10 @@
     <property object="CROSSBAR0" propertyId="xbar0.smbus0.clockdata" value="Enabled"/>
     <property object="DefaultMode" propertyId="mode.diagramLocation" value="93, 116"/>
     <property object="INTERRUPT_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="INTERRUPT_0" propertyId="interrupt.extendedinterruptenable1.enablesmbussmb0interrupt" value="Enabled"/>
+    <property object="INTERRUPT_0" propertyId="interrupt.extendedinterruptenable1.enabletimer3interrupt" value="Enabled"/>
     <property object="INTERRUPT_0" propertyId="interrupt.interruptenable.enableallinterrupts" value="Enabled"/>
+    <property object="INTERRUPT_0" propertyId="interrupt.interruptenable.enabletimer2interrupt" value="Enabled"/>
     <property object="IREF_0" propertyId="ABPeripheral.included" value="true"/>
     <property object="IREF_0" propertyId="iref.currentreferencecontrol.outputcurrent" value="0 uA"/>
     <property object="P0.2" propertyId="ports.settings.iomode" value="Digital Push-Pull Output"/>
@@ -70,6 +73,7 @@
     <property object="PCA_0" propertyId="pca.pcastartrun.pcacountertimerrunstatus" value="Stopped"/>
     <property object="PCA_0" propertyId="pca.watchdogcontrol.enablewatchdogtimer" value="Disabled"/>
     <property object="RSTSRC_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="RTC_0" propertyId="ABPeripheral.included" value="true"/>
     <property object="RTC_0" propertyId="rtc.hidden.rtcalarmprogrammedvalue0" value="20"/>
     <property object="RTC_0" propertyId="rtc.hidden.selectandenablelowfrequencyoscillator" value="Enabled"/>
     <property object="RTC_0" propertyId="rtc.rtcalarm.actualalarmperiod" value="1.22 milliseconds"/>
@@ -81,9 +85,18 @@
     <property object="RTC_0" propertyId="rtc.view.view" value="Advanced"/>
     <property object="SMBUS_0" propertyId="ABPeripheral.included" value="true"/>
     <property object="SMBUS_0" propertyId="smbus.configuration.enablesmbus" value="Enabled"/>
+    <property object="SMBUS_0" propertyId="smbus.configuration.enablesmbusfreetimeoutdetection" value="Enabled"/>
+    <property object="SMBUS_0" propertyId="smbus.configuration.enablesmbusscltimeoutdetection" value="Enabled"/>
+    <property object="SMBUS_0" propertyId="smbus.configuration.enablesmbussetupandholdtimeextension" value="Enabled"/>
+    <property object="SMBUS_0" propertyId="smbus.configuration.smbusclocksourceselection" value="Timer 1 overflow"/>
     <property object="SMBUS_0" propertyId="smbus.configuration.smbusslaveinhibit" value="Slave Disabled"/>
     <property object="SMBUS_0" propertyId="smbus.view.view" value="Advanced"/>
     <property object="TIMER01_0" propertyId="ABPeripheral.included" value="true"/>
+    <property object="TIMER01_0" propertyId="timer01.timer1highbyte.timer1highbyte" value="204"/>
+    <property object="TIMER01_0" propertyId="timer01.timer1lowbyte.timer1lowbyte" value="52"/>
+    <property object="TIMER01_0" propertyId="timer01.timer1mode2:8bitcountertimerwithautoreload.targetoverflowfrequency" value="32000"/>
+    <property object="TIMER01_0" propertyId="timer01.timer1mode2:8bitcountertimerwithautoreload.timerinitvalue" value="52"/>
+    <property object="TIMER01_0" propertyId="timer01.timer1mode2:8bitcountertimerwithautoreload.timerreloadvalue" value="204"/>
     <property object="TIMER16_2" propertyId="ABPeripheral.included" value="true"/>
     <property object="TIMER16_2" propertyId="timer16.control.clocksource" value="SYSCLK"/>
     <property object="TIMER16_2" propertyId="timer16.initandreloadvalue.targetoverflowfrequency" value="20000"/>
@@ -91,10 +104,21 @@
     <property object="TIMER16_2" propertyId="timer16.reloadhighbyte.reloadhighbyte" value="252"/>
     <property object="TIMER16_2" propertyId="timer16.reloadlowbyte.reloadlowbyte" value="24"/>
     <property object="TIMER16_3" propertyId="ABPeripheral.included" value="true"/>
+    <property object="TIMER16_3" propertyId="timer16.control.runcontrol" value="Start"/>
+    <property object="TIMER16_3" propertyId="timer16.control.timerrunningstate" value="Timer is Running"/>
+    <property object="TIMER16_3" propertyId="timer16.highbyte.highbyte" value="56"/>
+    <property object="TIMER16_3" propertyId="timer16.initandreloadvalue.targetoverflowfrequency" value="40"/>
+    <property object="TIMER16_3" propertyId="timer16.initandreloadvalue.timerinitvalue" value="14494"/>
+    <property object="TIMER16_3" propertyId="timer16.initandreloadvalue.timerreloadvalue" value="23869"/>
+    <property object="TIMER16_3" propertyId="timer16.lowbyte.lowbyte" value="158"/>
+    <property object="TIMER16_3" propertyId="timer16.reloadhighbyte.reloadhighbyte" value="93"/>
+    <property object="TIMER16_3" propertyId="timer16.reloadlowbyte.reloadlowbyte" value="61"/>
     <property object="TIMER_SETUP_0" propertyId="ABPeripheral.included" value="true"/>
     <property object="TIMER_SETUP_0" propertyId="timer_setup.clockcontrol.timer2lowbyteclockselect" value="Use SYSCLK"/>
-    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer0.mode" value="Mode 1, 16-bit Counter/Timer"/>
-    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer1.mode" value="Mode 1, 16-bit Counter/Timer"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer01control.timer1runcontrol" value="Start"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer1.mode" value="Mode 2, 8-bit Counter/Timer with Auto-Reload"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer1.timerrunningstate" value="Timer is Running"/>
+    <property object="TIMER_SETUP_0" propertyId="timer_setup.timer1.timerswitch1:runcontrol" value="Start"/>
     <property object="VREF_0" propertyId="ABPeripheral.included" value="true"/>
   </mode>
   <mode name="smbus_reset">
