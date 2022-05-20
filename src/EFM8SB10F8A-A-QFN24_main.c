@@ -147,7 +147,7 @@ main (void)
 
   TMR2CN0 |= TMR2CN0_TR2__RUN; // Start Timer 2 for pulse generation
   // Go into stimulation mode
-  Monophasic();
+  Biphasic();
 }
 
 // Function declarations
@@ -206,6 +206,7 @@ void Biphasic(void){
   uint8_t set_biphasic = 0;
   // start shunted
   Polarity(3);
+  MUX36S16_output(0);
   while(1) {
       if (i_50us <= half_T_on && isstim && set){
           Polarity(1);   // Forward polarity
