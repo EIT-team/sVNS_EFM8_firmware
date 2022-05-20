@@ -202,7 +202,7 @@ void Monophasic(void){
  */
 void Biphasic(void){
   // handle T_on division by 2 in integers
-  uint8_t half_T_on = T_on / 2;
+  float half_T_on = (float) T_on / 2.0;
   uint8_t set_biphasic = 0;
   // start shunted
   Polarity(3);
