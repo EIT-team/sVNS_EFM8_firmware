@@ -31,12 +31,13 @@ uint8_t F_hz_LB;
 uint8_t F_hz;
 uint8_t Iset;
 bool stimDelivering;
-extern volatile uint16_t i_50us;
-extern volatile uint32_t timer2;
+//extern volatile uint16_t i_50us;
+extern volatile float i_50us;
+//extern volatile uint32_t timer2;
 uint8_t set = 1;
 uint8_t j;
 float cycles;
-uint32_t chunks_30 = 30e6 / 50; // holds how many chunks of 50 us fit in 30 seconds pulse train/pulse off period
+// uint32_t chunks_30 = 30e6 / 50; // holds how many chunks of 50 us fit in 30 seconds pulse train/pulse off period
 volatile uint8_t isstim = 1;
 // Stimulation function prototypes
 void Polarity(uint8_t);
@@ -44,7 +45,7 @@ void Pulse_On(void);
 void Pulse_Off(void);
 void Monophasic(void);
 void Biphasic(void);
-void Biphasic_pulm(void);
+// void Biphasic_pulm(void);
 
 // I2C
 // P0.0 - SMBus SDA
@@ -208,23 +209,18 @@ void Biphasic(void){
   Polarity(3);
   MUX36S16_output(0);
   while(1) {
-      if (i_50us <= half_T_on && isstim && set){
+      if (i_50us <= half_T_on){
           Polarity(1);   // Forward polarity
           Pulse_On();
-          set = 0;
-          set_biphasic = 1;
       }
-      else if ((half_T_on < i_50us && i_50us <= T_on) && isstim && set_biphasic){
+      else if ((half_T_on < i_50us) && (i_50us <= T_on)){
           Polarity(3);   // Shunted
           Polarity(2);  // Reverse
-          set = 0;
-          set_biphasic = 0;
       }
-      else if (i_50us > T_on && isstim) {
+      else if (i_50us > T_on) {
           Polarity(3);   // Shunted
           Pulse_Off();
-          isstim = 0;
-          set = 1;
+
       } //
   }
 }
@@ -233,55 +229,55 @@ void Biphasic(void){
  * --------------------
  * Biphasic stimulation with the pulmonary protocol
  */
-void Biphasic_pulm(void){
-  uint8_t stimOff = 0;
-  uint8_t stimStart = 1;
-  uint32_t chunks_15s = chunks_30 / 2;
-  uint8_t half_T_on = T_on / 2;
-  uint8_t set_biphasic = 0;
-  // Shunted
-  while(1) {
-      if (timer2 < chunks_15s && stimStart) {
-          MUX36S16_output(mux36s16_state);    // Open stimulation channel.
-          while (timer2 < chunks_15s) {
-              if (i_50us <= half_T_on && isstim && set){
-                Polarity(1); // Forward polarity
-                Pulse_On();
-                set = 0;
-                set_biphasic = 1;
-              }
-              else if ((half_T_on < i_50us && i_50us <= T_on) && isstim && set_biphasic){
-                  Polarity(3);   // Shunted
-                  Polarity(2);  // Reversed
-                  set = 0;
-                  set_biphasic = 0;
-              }
-              else if (i_50us > T_on && isstim) {
-                  Polarity(3);
-                  Pulse_Off();
-                  isstim = 0;
-                  set = 1;
-              } // end if
-      } // end while
-          stimOff = !stimOff;
-          stimStart = !stimStart;
-    } // end if
-      else if (chunks_30 > timer2 && timer2 >= chunks_15s && stimOff){
-          Pulse_Off();
-          stimOff = !stimOff;
-      }
-      else if (timer2 >= chunks_30){
-          timer2 = 0;
-          stimStart = !stimStart;
-          if (mux36s16_state <= 15) {
-              mux36s16_state ++;
-          }
-          else if (mux36s16_state > 16) {
-              mux36s16_state = 0;
-          }
-      }
-  }
-}
+//void Biphasic_pulm(void){
+//  uint8_t stimOff = 0;
+//  uint8_t stimStart = 1;
+//  uint32_t chunks_15s = chunks_30 / 2;
+//  uint8_t half_T_on = T_on / 2;
+//  uint8_t set_biphasic = 0;
+//  // Shunted
+//  while(1) {
+//      if (timer2 < chunks_15s && stimStart) {
+//          MUX36S16_output(mux36s16_state);    // Open stimulation channel.
+//          while (timer2 < chunks_15s) {
+//              if (i_50us <= half_T_on && isstim && set){
+//                Polarity(1); // Forward polarity
+//                Pulse_On();
+//                set = 0;
+//                set_biphasic = 1;
+//              }
+//              else if ((half_T_on < i_50us && i_50us <= T_on) && isstim && set_biphasic){
+//                  Polarity(3);   // Shunted
+//                  Polarity(2);  // Reversed
+//                  set = 0;
+//                  set_biphasic = 0;
+//              }
+//              else if (i_50us > T_on && isstim) {
+//                  Polarity(3);
+//                  Pulse_Off();
+//                  isstim = 0;
+//                  set = 1;
+//              } // end if
+//      } // end while
+//          stimOff = !stimOff;
+//          stimStart = !stimStart;
+//    } // end if
+//      else if (chunks_30 > timer2 && timer2 >= chunks_15s && stimOff){
+//          Pulse_Off();
+//          stimOff = !stimOff;
+//      }
+//      else if (timer2 >= chunks_30){
+//          timer2 = 0;
+//          stimStart = !stimStart;
+//          if (mux36s16_state <= 15) {
+//              mux36s16_state ++;
+//          }
+//          else if (mux36s16_state > 16) {
+//              mux36s16_state = 0;
+//          }
+//      }
+//  }
+//}
 
 void SDA_Reset(void)
 {

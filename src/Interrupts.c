@@ -9,8 +9,9 @@
 // USER INCLUDES
 #include <SI_EFM8SB1_Register_Enums.h>
 #include "EFM8SB1_SMBus_Master_Multibyte.h"
-volatile uint16_t i_50us = 0;
-volatile uint32_t timer2 = 0;
+//volatile uint16_t i_50us = 0;
+volatile float i_50us = 0;
+// volatile uint32_t timer2 = 0;
 extern volatile uint8_t isstim;
 extern float cycles;
 
@@ -156,8 +157,8 @@ SI_INTERRUPT(TIMER2_ISR, TIMER2_IRQn)
 {
   TMR2CN0_TF2H = 0;                              // clear Timer2 interrupt flag
   i_50us++;
-  timer2++;
+//  timer2++;
   if(i_50us>cycles){
-      i_50us = 0; isstim = 1;
+      i_50us = 0;
   }
 }
