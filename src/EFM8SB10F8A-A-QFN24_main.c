@@ -209,15 +209,15 @@ void Biphasic(void){
   Polarity(3);
   MUX36S16_output(0);
   while(1) {
-      if (i_50us <= half_T_on){
+      if (i_50us < half_T_on){
           Polarity(1);   // Forward polarity
           Pulse_On();
       }
-      else if ((half_T_on < i_50us) && (i_50us <= T_on)){
+      else if ((half_T_on <= i_50us) && (i_50us < T_on)){
           Polarity(3);   // Shunted
           Polarity(2);  // Reverse
       }
-      else if (i_50us > T_on) {
+      else if (i_50us >= T_on) {
           Polarity(3);   // Shunted
           Pulse_Off();
 
