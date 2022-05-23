@@ -13,6 +13,8 @@
 #include <SI_EFM8SB1_Register_Enums.h>                  // SFR declarations
 #include "InitDevice.h"
 #include "EFM8SB1_SMBus_Master_Multibyte.h"
+#include "power.h"
+#include "SmaRTClock.h"
 
 // $[Generated Includes]
 // [Generated Includes]$
@@ -31,21 +33,23 @@ uint8_t F_hz_LB;
 uint8_t F_hz;
 uint8_t Iset;
 bool stimDelivering;
+bool isStim;
 //extern volatile uint16_t i_50us;
 extern volatile float i_50us;
-//extern volatile uint32_t timer2;
+extern volatile float timer2;
+const float cycles_large = 2e6/50;
 uint8_t set = 1;
 uint8_t j;
 float cycles;
 // uint32_t chunks_30 = 30e6 / 50; // holds how many chunks of 50 us fit in 30 seconds pulse train/pulse off period
-volatile uint8_t isstim = 1;
+// volatile uint8_t isstim = 1;
 // Stimulation function prototypes
 void Polarity(uint8_t);
 void Pulse_On(void);
 void Pulse_Off(void);
-void Monophasic(void);
+//void Monophasic(void);
 void Biphasic(void);
-// void Biphasic_pulm(void);
+void Biphasic_pulm(void);
 
 // I2C
 // P0.0 - SMBus SDA
@@ -122,6 +126,15 @@ main (void)
   }
   // Initialize normal operation
   enter_DefaultMode_from_smbus_reset ();
+  // Initialize RTC and power management.
+  RTC0CN0_Local = 0xC0;                // Initialize Local Copy of RTC0CN0
+  RTC0CN0_SetBits(RTC0TR+RTC0AEN+ALRM);// Enable Counter, Alarm, and Auto-Reset
+
+  LPM_Init();                         // Initialize Power Management
+  LPM_Enable_Wakeup(RTC);
+
+  RTC_Alarm = 1;                      // Set the RTC Alarm Flag on startup
+
   // SMBus comms
   // Read data from NT3H
   SMB_DATA_OUT[0] = MEMA;      // NT3H Address to Read
@@ -183,20 +196,6 @@ void Pulse_Off(void){
                             | (0x00 << IREF0CN0_IREF0DAT__SHIFT); // Current 0 mA
 }
 
-void Monophasic(void){
-  Polarity(1); // Forward polarity
-  while(1) {
-      if (i_50us < T_on && isstim && set) {
-          Pulse_On();
-          set = 0;
-      }
-      else if (i_50us > T_on && isstim) {
-          Pulse_Off();
-          isstim = 0;
-          set = 1;
-      } // end if
-  } // end while
-}
 /* Function: Biphasic
  * --------------------
  * Uninterrupted Biphasic stimulation with set parameters
@@ -206,7 +205,7 @@ void Biphasic(void){
   float half_T_on = (float) T_on / 2.0;
   uint8_t set_biphasic = 0;
   // start shunted
-  Polarity(3);
+  Polarity(0);
   MUX36S16_output(0);
   while(1) {
       if (i_50us < half_T_on){
@@ -214,70 +213,73 @@ void Biphasic(void){
           Pulse_On();
       }
       else if ((half_T_on <= i_50us) && (i_50us < T_on)){
-          Polarity(3);   // Shunted
+          Polarity(0);   // Shunted
           Polarity(2);  // Reverse
       }
       else if (i_50us >= T_on) {
-          Polarity(3);   // Shunted
+          Polarity(0);   // Shunted
           Pulse_Off();
 
       } //
   }
 }
 
-/* Function: Biphasic_pulm
- * --------------------
- * Biphasic stimulation with the pulmonary protocol
- */
-//void Biphasic_pulm(void){
-//  uint8_t stimOff = 0;
-//  uint8_t stimStart = 1;
-//  uint32_t chunks_15s = chunks_30 / 2;
-//  uint8_t half_T_on = T_on / 2;
-//  uint8_t set_biphasic = 0;
-//  // Shunted
-//  while(1) {
-//      if (timer2 < chunks_15s && stimStart) {
-//          MUX36S16_output(mux36s16_state);    // Open stimulation channel.
-//          while (timer2 < chunks_15s) {
-//              if (i_50us <= half_T_on && isstim && set){
-//                Polarity(1); // Forward polarity
-//                Pulse_On();
-//                set = 0;
-//                set_biphasic = 1;
-//              }
-//              else if ((half_T_on < i_50us && i_50us <= T_on) && isstim && set_biphasic){
-//                  Polarity(3);   // Shunted
-//                  Polarity(2);  // Reversed
-//                  set = 0;
-//                  set_biphasic = 0;
-//              }
-//              else if (i_50us > T_on && isstim) {
-//                  Polarity(3);
-//                  Pulse_Off();
-//                  isstim = 0;
-//                  set = 1;
-//              } // end if
-//      } // end while
-//          stimOff = !stimOff;
-//          stimStart = !stimStart;
-//    } // end if
-//      else if (chunks_30 > timer2 && timer2 >= chunks_15s && stimOff){
-//          Pulse_Off();
-//          stimOff = !stimOff;
-//      }
-//      else if (timer2 >= chunks_30){
-//          timer2 = 0;
-//          stimStart = !stimStart;
-//          if (mux36s16_state <= 15) {
-//              mux36s16_state ++;
-//          }
-//          else if (mux36s16_state > 16) {
-//              mux36s16_state = 0;
-//          }
-//      }
-//  }
-//}
+// Function: Biphasic_pulm
+// * --------------------
+// * Biphasic stimulation with the pulmonary protocol
+//
+void Biphasic_pulm(void){
+  // handle T_on division by 2 in integers
+  float half_T_on = (float) T_on / 2.0;
+  uint8_t set_biphasic = 0;
+  // start shunted
+  Polarity(0);
+  MUX36S16_output(0);
+  while(1){
+      // Handle RTC failure
+      if(RTC_Failure)
+      {
+       RTC_Failure = 0;              // Reset RTC Failure Flag to indicate
+                       // that we have detected an RTC failure
+                       // and are handling the event
+       // Do something...RTC Has Stopped Oscillating
+       while(1);                     // <Insert Handler Code Here>
+      }
+      // Handle RTC Alarm
+      if(RTC_Alarm)
+          {
+
+           RTC_Alarm = 0;                // Reset RTC Alarm Flag to indicate
+                           // that we have detected an alarm
+                           // and are handling the alarm event
+
+           isStim = !isStim;       // Change stim state
+
+          }
+      if (isStim) {
+
+        while(timer2 < cycles_large) {
+        if (i_50us < half_T_on){
+            Polarity(1);   // Forward polarity
+            Pulse_On();
+        }
+        else if ((half_T_on <= i_50us) && (i_50us < T_on)){
+            Polarity(0);   // Shunted
+            Polarity(2);  // Reverse
+        }
+        else if (i_50us >= T_on) {
+            Polarity(0);   // Shunted
+            Pulse_Off();
+
+        } //
+        }
+        while((PMU0CF & RTCAWK) == 0);
+        if(PMU0CF & RTCAWK) RTC_Alarm = 1;
+        if(PMU0CF & RTCFWK) RTC_Failure = 1;
+        PMU0CF = 0x20;
+      }
+    }
+}
 
 void SDA_Reset(void)
 {

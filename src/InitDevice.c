@@ -533,8 +533,8 @@ enter_DefaultMode_from_smbus_reset (void)
   PORTS_0_enter_DefaultMode_from_smbus_reset ();
   PORTS_1_enter_DefaultMode_from_smbus_reset ();
   PBCFG_0_enter_DefaultMode_from_smbus_reset ();
-  CLOCK_0_enter_DefaultMode_from_smbus_reset ();
   RTC_0_enter_DefaultMode_from_smbus_reset ();
+  CLOCK_0_enter_DefaultMode_from_smbus_reset ();
   TIMER01_0_enter_DefaultMode_from_smbus_reset ();
   TIMER16_2_enter_DefaultMode_from_smbus_reset ();
   TIMER16_3_enter_DefaultMode_from_smbus_reset ();
@@ -810,10 +810,10 @@ RTC_0_enter_DefaultMode_from_smbus_reset (void)
 
   // $[ALARM0 - RTC Alarm Programmed Value 0]
   /***********************************************************************
-   - RTC Alarm Programmed Value 0 = 0x14
+   - RTC Alarm Programmed Value 0 = 0x04
    ***********************************************************************/
   RTC0ADR = ALARM0;
-  RTC0DAT = (0x14 << ALARM0_ALARM0__SHIFT);
+  RTC0DAT = (0x04 << ALARM0_ALARM0__SHIFT);
   while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
     ;    //Poll Busy Bit
   // [ALARM0 - RTC Alarm Programmed Value 0]$
@@ -829,19 +829,18 @@ RTC_0_enter_DefaultMode_from_smbus_reset (void)
 
   // $[RTC0CN - RTC Control]
   /***********************************************************************
-   - Disable RTC oscillator
-   - RTC timer is stopped
+   - Enable RTC oscillator
+   - RTC timer is running
    - Enable missing RTC detector
-   - Disable RTC alarm
-   - Alarm event flag is not set or disable the auto reset function
+   - Enable RTC alarm
+   - Alarm event flag is set or enable the auto reset function
    - Do not start a capture operation
    - Do not start a set operation
    ***********************************************************************/
   RTC0ADR = RTC0CN0;
-  RTC0DAT = RTC0CN0_RTC0EN__DISABLED | RTC0CN0_RTC0TR__STOP
-      | RTC0CN0_MCLKEN__ENABLED | RTC0CN0_RTC0AEN__DISABLED
-      | RTC0CN0_ALRM__NOT_SET | RTC0CN0_RTC0CAP__NOT_SET
-      | RTC0CN0_RTC0SET__NOT_SET;
+  RTC0DAT = RTC0CN0_RTC0EN__ENABLED | RTC0CN0_RTC0TR__RUN
+      | RTC0CN0_MCLKEN__ENABLED | RTC0CN0_RTC0AEN__ENABLED | RTC0CN0_ALRM__SET
+      | RTC0CN0_RTC0CAP__NOT_SET | RTC0CN0_RTC0SET__NOT_SET;
   while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
     ;    //Poll Busy Bit
 

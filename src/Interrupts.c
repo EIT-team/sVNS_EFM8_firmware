@@ -11,9 +11,10 @@
 #include "EFM8SB1_SMBus_Master_Multibyte.h"
 //volatile uint16_t i_50us = 0;
 volatile float i_50us = 0;
-// volatile uint32_t timer2 = 0;
-extern volatile uint8_t isstim;
+volatile float timer2 = 0;
+// extern volatile uint8_t isstim;
 extern float cycles;
+extern float cycles_large;
 
 //-----------------------------------------------------------------------------
 // SMBUS0_ISR
@@ -157,8 +158,11 @@ SI_INTERRUPT(TIMER2_ISR, TIMER2_IRQn)
 {
   TMR2CN0_TF2H = 0;                              // clear Timer2 interrupt flag
   i_50us++;
-//  timer2++;
+  timer2++;
   if(i_50us>cycles){
       i_50us = 0;
+  }
+  if(timer2>cycles_large){
+      timer2 = 0;
   }
 }
