@@ -10,11 +10,18 @@
 #include <SI_EFM8SB1_Register_Enums.h>
 #include "EFM8SB1_SMBus_Master_Multibyte.h"
 //volatile uint16_t i_50us = 0;
-volatile float i_50us = 0;
+volatile uint8_t i_50us = 0;
 volatile float timer2 = 0;
 // extern volatile uint8_t isstim;
-extern float cycles;
-extern float cycles_large;
+//extern float cycles;
+// extern float cycles_large;
+extern float half_T_on;
+
+extern void Polarity(uint8_t);
+extern void Pulse_On(void);
+extern void Pulse_Off(void);
+extern void MUX36S16_output(uint8_t);
+
 
 //-----------------------------------------------------------------------------
 // SMBUS0_ISR
@@ -145,24 +152,33 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
 //-----------------------------------------------------------------------------
 SI_INTERRUPT(TIMER3_ISR, TIMER3_IRQn)
   {
-    SMB0CF &= ~0x80;                    // Disable SMBus
-    SMB0CF |= 0x80;// Re-enable SMBus
-    TMR3CN0 &= ~0x80;// Clear Timer3 interrupt-pending
-    // flag
-    SMB0CN0_STA = 0;
-    SMB_BUSY = 0;// Free SMBus
-  }
+  uint8_t set_biphasic = 0;
+  Polarity(0); // start shunted
+  MUX36S16_output(0);
+  TMR2CN0 |= TMR2CN0_TR2__RUN; // Start Timer 2 for pulse width timing
+  if (i_50us == 0){              // (+) phase for 50 us
+          Polarity(1);   // Forward polarity
+          Pulse_On();
+      }
+  else if (i_50us == 1){         // (-) phase for next 50 us
+          Polarity(0);   // Shunted
+          Polarity(2);  // Reverse
+      }
+  else if (i_50us > 1) {        // 100 us passed, stop stimulation
+          Polarity(0);   // Shunted
+          Pulse_Off();
+      }
+  TMR2CN0 |= TMR2CN0_TR2__STOP;
+  TMR3CN0 &= ~0x80;// Clear Timer3 interrupt-pending flag
+}
 
 
 SI_INTERRUPT(TIMER2_ISR, TIMER2_IRQn)
 {
   TMR2CN0_TF2H = 0;                              // clear Timer2 interrupt flag
   i_50us++;
-  timer2++;
-  if(i_50us>cycles){
+  if(i_50us>2){
       i_50us = 0;
   }
-  if(timer2>cycles_large){
-      timer2 = 0;
-  }
+
 }

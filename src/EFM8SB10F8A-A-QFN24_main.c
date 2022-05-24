@@ -35,12 +35,13 @@ uint8_t Iset;
 bool stimDelivering;
 bool isStim;
 //extern volatile uint16_t i_50us;
-extern volatile float i_50us;
+extern volatile uint8_t i_50us;
 extern volatile float timer2;
 const float cycles_large = 2e6/50;
 uint8_t set = 1;
 uint8_t j;
 float cycles;
+float half_T_on;
 // uint32_t chunks_30 = 30e6 / 50; // holds how many chunks of 50 us fit in 30 seconds pulse train/pulse off period
 // volatile uint8_t isstim = 1;
 // Stimulation function prototypes
@@ -158,10 +159,11 @@ main (void)
   cycles = 20000 / F_hz; // number of cycles for 50 us/20 kHz timer for a given pulse frequency
 
   P05 = 1;              // Enable LT8410, enable MUX36D08 and 2x MUX36S16
+  half_T_on = (float) T_on / 2.0;
+  TMR3CN0 |= TMR3CN0_TR3__RUN; // start timer 3 for stimulation
+  while(1){
 
-  TMR2CN0 |= TMR2CN0_TR2__RUN; // Start Timer 2 for pulse generation
-  // Go into stimulation mode
-  Biphasic();
+  };
 }
 
 // Function declarations
@@ -202,27 +204,7 @@ void Pulse_Off(void){
  */
 void Biphasic(void){
   // handle T_on division by 2 in integers
-  float half_T_on = (float) T_on / 2.0;
-  uint8_t set_biphasic = 0;
-  // start shunted
-  Polarity(0);
-  MUX36S16_output(0);
-  while(1) {
-      if (i_50us < half_T_on){
-          Polarity(1);   // Forward polarity
-          Pulse_On();
-      }
-      else if ((half_T_on <= i_50us) && (i_50us < T_on)){
-          Polarity(0);   // Shunted
-          Polarity(2);  // Reverse
-      }
-      else if (i_50us >= T_on) {
-          Polarity(0);   // Shunted
-          Pulse_Off();
-
-      } //
   }
-}
 
 // Function: Biphasic_pulm
 // * --------------------

@@ -856,38 +856,29 @@ TIMER_SETUP_0_enter_DefaultMode_from_smbus_reset (void)
 {
   // $[CKCON0 - Clock Control 0]
   /***********************************************************************
-   - System clock divided by 12
-   - Counter/Timer 0 uses the clock defined by the prescale field, SCA
+   - System clock divided by 48
+   - Counter/Timer 0 uses the system clock
    - Timer 2 high byte uses the clock defined by T2XCLK in TMR2CN0
    - Timer 2 low byte uses the system clock
    - Timer 3 high byte uses the clock defined by T3XCLK in TMR3CN0
    - Timer 3 low byte uses the clock defined by T3XCLK in TMR3CN0
    - Timer 1 uses the clock defined by the prescale field, SCA
    ***********************************************************************/
-  CKCON0 = CKCON0_SCA__SYSCLK_DIV_12 | CKCON0_T0M__PRESCALE
+  CKCON0 = CKCON0_SCA__SYSCLK_DIV_48 | CKCON0_T0M__SYSCLK
       | CKCON0_T2MH__EXTERNAL_CLOCK | CKCON0_T2ML__SYSCLK
       | CKCON0_T3MH__EXTERNAL_CLOCK | CKCON0_T3ML__EXTERNAL_CLOCK
       | CKCON0_T1M__PRESCALE;
   // [CKCON0 - Clock Control 0]$
 
   // $[TMOD - Timer 0/1 Mode]
-  /***********************************************************************
-   - Mode 0, 13-bit Counter/Timer
-   - Mode 2, 8-bit Counter/Timer with Auto-Reload
-   - Timer Mode
-   - Timer 0 enabled when TR0 = 1 irrespective of INT0 logic level
-   - Timer Mode
-   - Timer 1 enabled when TR1 = 1 irrespective of INT1 logic level
-   ***********************************************************************/
-  TMOD = TMOD_T0M__MODE0 | TMOD_T1M__MODE2 | TMOD_CT0__TIMER
-      | TMOD_GATE0__DISABLED | TMOD_CT1__TIMER | TMOD_GATE1__DISABLED;
   // [TMOD - Timer 0/1 Mode]$
 
   // $[TCON - Timer 0/1 Control]
   /***********************************************************************
+   - Start Timer 0 running
    - Start Timer 1 running
    ***********************************************************************/
-  TCON |= TCON_TR1__RUN;
+  TCON |= TCON_TR0__RUN | TCON_TR1__RUN;
   // [TCON - Timer 0/1 Control]$
 
 }
@@ -973,17 +964,10 @@ SMBUS_0_enter_DefaultMode_from_smbus_reset (void)
 
   // $[SMB0CF - SMBus 0 Configuration]
   /***********************************************************************
-   - Timer 1 Overflow
    - Slave states are inhibited
    - Enable the SMBus module
-   - Enable bus free timeouts
-   - Enable SCL low timeouts
-   - Enable SDA extended setup and hold times
    ***********************************************************************/
-  SMB0CF &= ~SMB0CF_SMBCS__FMASK;
-  SMB0CF |= SMB0CF_SMBCS__TIMER1 | SMB0CF_INH__SLAVE_DISABLED
-      | SMB0CF_ENSMB__ENABLED | SMB0CF_SMBFTE__FREE_TO_ENABLED
-      | SMB0CF_SMBTOE__SCL_TO_ENABLED | SMB0CF_EXTHOLD__ENABLED;
+  SMB0CF |= SMB0CF_INH__SLAVE_DISABLED | SMB0CF_ENSMB__ENABLED;
   // [SMB0CF - SMBus 0 Configuration]$
 
 }
@@ -1007,6 +991,17 @@ INTERRUPT_0_enter_DefaultMode_from_smbus_reset (void)
   // [EIE1 - Extended Interrupt Enable 1]$
 
   // $[EIP1 - Extended Interrupt Priority 1]
+  /***********************************************************************
+   - ADC0 Conversion Complete interrupt set to low priority level
+   - ADC0 Window interrupt set to low priority level
+   - CP0 interrupt set to low priority level
+   - PCA0 interrupt set to low priority level
+   - RTC Alarm interrupt set to low priority level
+   - SMB0 interrupt set to low priority level
+   - Timer 3 interrupts set to high priority level
+   ***********************************************************************/
+  EIP1 = EIP1_PADC0__LOW | EIP1_PWADC0__LOW | EIP1_PCP0__LOW | EIP1_PPCA0__LOW
+      | EIP1_PRTC0A__LOW | EIP1_PSMB0__LOW | EIP1_PT3__HIGH;
   // [EIP1 - Extended Interrupt Priority 1]$
 
   // $[IE - Interrupt Enable]
@@ -1152,17 +1147,9 @@ TIMER01_0_enter_DefaultMode_from_smbus_reset (void)
   // [TL0 - Timer 0 Low Byte]$
 
   // $[TH1 - Timer 1 High Byte]
-  /***********************************************************************
-   - Timer 1 High Byte = 0xCC
-   ***********************************************************************/
-  TH1 = (0xCC << TH1_TH1__SHIFT);
   // [TH1 - Timer 1 High Byte]$
 
   // $[TL1 - Timer 1 Low Byte]
-  /***********************************************************************
-   - Timer 1 Low Byte = 0x34
-   ***********************************************************************/
-  TL1 = (0x34 << TL1_TL1__SHIFT);
   // [TL1 - Timer 1 Low Byte]$
 
   // $[Timer Restoration]
@@ -1185,41 +1172,41 @@ TIMER16_3_enter_DefaultMode_from_smbus_reset (void)
   // [Timer Initialization]$
 
   // $[TMR3CN0 - Timer 3 Control]
+  /***********************************************************************
+   - External Clock is RTC. Capture trigger is External Oscillator/8
+   ***********************************************************************/
+  TMR3CN0 |= TMR3CN0_T3XCLK__RTC_CAP_EXTOSC;
   // [TMR3CN0 - Timer 3 Control]$
 
   // $[TMR3H - Timer 3 High Byte]
   /***********************************************************************
-   - Timer 3 High Byte = 0x38
+   - Timer 3 High Byte = 0xFF
    ***********************************************************************/
-  TMR3H = (0x38 << TMR3H_TMR3H__SHIFT);
+  TMR3H = (0xFF << TMR3H_TMR3H__SHIFT);
   // [TMR3H - Timer 3 High Byte]$
 
   // $[TMR3L - Timer 3 Low Byte]
   /***********************************************************************
-   - Timer 3 Low Byte = 0x9E
+   - Timer 3 Low Byte = 0xFF
    ***********************************************************************/
-  TMR3L = (0x9E << TMR3L_TMR3L__SHIFT);
+  TMR3L = (0xFF << TMR3L_TMR3L__SHIFT);
   // [TMR3L - Timer 3 Low Byte]$
 
   // $[TMR3RLH - Timer 3 Reload High Byte]
   /***********************************************************************
-   - Timer 3 Reload High Byte = 0x5D
+   - Timer 3 Reload High Byte = 0xFC
    ***********************************************************************/
-  TMR3RLH = (0x5D << TMR3RLH_TMR3RLH__SHIFT);
+  TMR3RLH = (0xFC << TMR3RLH_TMR3RLH__SHIFT);
   // [TMR3RLH - Timer 3 Reload High Byte]$
 
   // $[TMR3RLL - Timer 3 Reload Low Byte]
   /***********************************************************************
-   - Timer 3 Reload Low Byte = 0x3D
+   - Timer 3 Reload Low Byte = 0xCD
    ***********************************************************************/
-  TMR3RLL = (0x3D << TMR3RLL_TMR3RLL__SHIFT);
+  TMR3RLL = (0xCD << TMR3RLL_TMR3RLL__SHIFT);
   // [TMR3RLL - Timer 3 Reload Low Byte]$
 
   // $[TMR3CN0]
-  /***********************************************************************
-   - Start Timer 3 running
-   ***********************************************************************/
-  TMR3CN0 |= TMR3CN0_TR3__RUN;
   // [TMR3CN0]$
 
   // $[Timer Restoration]
