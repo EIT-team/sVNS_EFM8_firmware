@@ -46,6 +46,7 @@ float half_T_on;
 // volatile uint8_t isstim = 1;
 // Stimulation function prototypes
 void Polarity(uint8_t);
+void T0_Waitus (uint8_t);
 void Pulse_On(void);
 void Pulse_Off(void);
 //void Monophasic(void);
@@ -76,7 +77,6 @@ SI_SBIT (SCL, SFR_P0, 1);                   // and P0.1
 // I2C function prototypes
 void SMB_Write (void);
 void SMB_Read (void);
-// void T0_Waitms (uint8_t ms);
 void SDA_Reset(void);
 
 // LT8410, MUX36 shutdown pin
@@ -120,6 +120,7 @@ SiLabs_Startup (void)
 void
 main (void)
 {
+  T0_Waitus(1);
   // SMBus reset
   enter_smbus_reset_from_RESET ();
   while(!SDA){
@@ -205,6 +206,30 @@ void Pulse_Off(void){
 void Biphasic(void){
   // handle T_on division by 2 in integers
   }
+
+void T0_Waitus (uint8_t us)
+{
+   TCON &= ~0x30;                      // Stop Timer0; Clear TCON_TF0
+   TMOD &= ~0x0f;                      // 16-bit free run mode
+   TMOD |=  0x01;
+
+   CKCON0 |= 0x04;                      // Timer0 counts SYSCLKs
+
+   while (us) {
+      TCON_TR0 = 0;                         // Stop Timer0
+      //TH0 = ((-SYSCLK/1000) >> 8);     // Overflow in 1ms
+      // Overflow in 0xFC18 (64536) cycles, which for the 20 MHz is 50 us.
+      TH0 = 0xFC;
+      //TL0 = ((-SYSCLK/1000) & 0xFF);
+      TL0 = 0x18;
+      TCON_TF0 = 0;                         // Clear overflow indicator
+      TCON_TR0 = 1;                         // Start Timer0
+      while (!TCON_TF0);                    // Wait for overflow
+      us--;                            // Update us counter
+   }
+
+   TCON_TR0 = 0;                            // Stop Timer0
+}
 
 // Function: Biphasic_pulm
 // * --------------------

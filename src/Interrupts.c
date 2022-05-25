@@ -21,6 +21,7 @@ extern void Polarity(uint8_t);
 extern void Pulse_On(void);
 extern void Pulse_Off(void);
 extern void MUX36S16_output(uint8_t);
+extern void T0_Waitus (uint8_t); // waits 50 us
 
 
 //-----------------------------------------------------------------------------
@@ -155,20 +156,19 @@ SI_INTERRUPT(TIMER3_ISR, TIMER3_IRQn)
   uint8_t set_biphasic = 0;
   Polarity(0); // start shunted
   MUX36S16_output(0);
-  TMR2CN0 |= TMR2CN0_TR2__RUN; // Start Timer 2 for pulse width timing
-  if (i_50us == 0){              // (+) phase for 50 us
+//  TMR2CN0 |= TMR2CN0_TR2__RUN; // Start Timer 2 for pulse width timing
           Polarity(1);   // Forward polarity
           Pulse_On();
-      }
-  else if (i_50us == 1){         // (-) phase for next 50 us
+          T0_Waitus(1);
+           // (-) phase for next 50 us
           Polarity(0);   // Shunted
           Polarity(2);  // Reverse
-      }
-  else if (i_50us > 1) {        // 100 us passed, stop stimulation
+          T0_Waitus(1);
+          // 100 us passed, stop stimulation
           Polarity(0);   // Shunted
           Pulse_Off();
-      }
-  TMR2CN0 |= TMR2CN0_TR2__STOP;
+
+//  TMR2CN0 |= TMR2CN0_TR2__STOP;
   TMR3CN0 &= ~0x80;// Clear Timer3 interrupt-pending flag
 }
 
@@ -176,9 +176,9 @@ SI_INTERRUPT(TIMER3_ISR, TIMER3_IRQn)
 SI_INTERRUPT(TIMER2_ISR, TIMER2_IRQn)
 {
   TMR2CN0_TF2H = 0;                              // clear Timer2 interrupt flag
-  i_50us++;
-  if(i_50us>2){
-      i_50us = 0;
-  }
+//  i_50us++;
+//  if(i_50us>2){
+//      i_50us = 0;
+//  }
 
 }
