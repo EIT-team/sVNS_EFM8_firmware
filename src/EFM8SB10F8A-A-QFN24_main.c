@@ -219,9 +219,9 @@ void T0_Waitus (uint8_t us)
       TCON_TR0 = 0;                         // Stop Timer0
       //TH0 = ((-SYSCLK/1000) >> 8);     // Overflow in 1ms
       // Overflow in 0xFC18 (64536) cycles, which for the 20 MHz is 50 us.
-      TH0 = 0xFC;
+      TH0 = 0xFF;
       //TL0 = ((-SYSCLK/1000) & 0xFF);
-      TL0 = 0x18;
+      TL0 = 0xF0;
       TCON_TF0 = 0;                         // Clear overflow indicator
       TCON_TR0 = 1;                         // Start Timer0
       while (!TCON_TF0);                    // Wait for overflow
@@ -236,9 +236,6 @@ void T0_Waitus (uint8_t us)
 // * Biphasic stimulation with the pulmonary protocol
 //
 void Biphasic_pulm(void){
-  // handle T_on division by 2 in integers
-  float half_T_on = (float) T_on / 2.0;
-  uint8_t set_biphasic = 0;
   // start shunted
   Polarity(0);
   MUX36S16_output(0);
@@ -265,20 +262,8 @@ void Biphasic_pulm(void){
           }
       if (isStim) {
 
-        while(timer2 < cycles_large) {
-        if (i_50us < half_T_on){
-            Polarity(1);   // Forward polarity
-            Pulse_On();
-        }
-        else if ((half_T_on <= i_50us) && (i_50us < T_on)){
-            Polarity(0);   // Shunted
-            Polarity(2);  // Reverse
-        }
-        else if (i_50us >= T_on) {
-            Polarity(0);   // Shunted
-            Pulse_Off();
-
-        } //
+        while(RTC_Alarm == 0) {
+            // Initiate interrupts
         }
         while((PMU0CF & RTCAWK) == 0);
         if(PMU0CF & RTCAWK) RTC_Alarm = 1;

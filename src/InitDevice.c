@@ -759,10 +759,10 @@ CLOCK_0_enter_DefaultMode_from_smbus_reset (void)
 {
   // $[CLKSEL - Clock Select]
   /***********************************************************************
-   - SYSCLK is equal to selected clock source divided by 1
+   - SYSCLK is equal to selected clock source divided by 2
    - Clock derived from the Internal Low Power Oscillator
    ***********************************************************************/
-  CLKSEL = CLKSEL_CLKDIV__SYSCLK_DIV_1 | CLKSEL_CLKSL__LPOSC;
+  CLKSEL = CLKSEL_CLKDIV__SYSCLK_DIV_2 | CLKSEL_CLKSL__LPOSC;
   // Wait for the clock to be ready
   while ((CLKSEL & CLKSEL_CLKRDY__BMASK) != CLKSEL_CLKRDY__SET)
     ;
@@ -856,7 +856,7 @@ TIMER_SETUP_0_enter_DefaultMode_from_smbus_reset (void)
 {
   // $[CKCON0 - Clock Control 0]
   /***********************************************************************
-   - System clock divided by 48
+   - System clock divided by 4
    - Counter/Timer 0 uses the system clock
    - Timer 2 high byte uses the clock defined by T2XCLK in TMR2CN0
    - Timer 2 low byte uses the system clock
@@ -864,13 +864,23 @@ TIMER_SETUP_0_enter_DefaultMode_from_smbus_reset (void)
    - Timer 3 low byte uses the clock defined by T3XCLK in TMR3CN0
    - Timer 1 uses the clock defined by the prescale field, SCA
    ***********************************************************************/
-  CKCON0 = CKCON0_SCA__SYSCLK_DIV_48 | CKCON0_T0M__SYSCLK
+  CKCON0 = CKCON0_SCA__SYSCLK_DIV_4 | CKCON0_T0M__SYSCLK
       | CKCON0_T2MH__EXTERNAL_CLOCK | CKCON0_T2ML__SYSCLK
       | CKCON0_T3MH__EXTERNAL_CLOCK | CKCON0_T3ML__EXTERNAL_CLOCK
       | CKCON0_T1M__PRESCALE;
   // [CKCON0 - Clock Control 0]$
 
   // $[TMOD - Timer 0/1 Mode]
+  /***********************************************************************
+   - Mode 2, 8-bit Counter/Timer with Auto-Reload
+   - Mode 0, 13-bit Counter/Timer
+   - Timer Mode
+   - Timer 0 enabled when TR0 = 1 irrespective of INT0 logic level
+   - Timer Mode
+   - Timer 1 enabled when TR1 = 1 irrespective of INT1 logic level
+   ***********************************************************************/
+  TMOD = TMOD_T0M__MODE2 | TMOD_T1M__MODE0 | TMOD_CT0__TIMER
+      | TMOD_GATE0__DISABLED | TMOD_CT1__TIMER | TMOD_GATE1__DISABLED;
   // [TMOD - Timer 0/1 Mode]$
 
   // $[TCON - Timer 0/1 Control]
@@ -1106,16 +1116,16 @@ TIMER16_2_enter_DefaultMode_from_smbus_reset (void)
 
   // $[TMR2RLH - Timer 2 Reload High Byte]
   /***********************************************************************
-   - Timer 2 Reload High Byte = 0xFC
+   - Timer 2 Reload High Byte = 0xFE
    ***********************************************************************/
-  TMR2RLH = (0xFC << TMR2RLH_TMR2RLH__SHIFT);
+  TMR2RLH = (0xFE << TMR2RLH_TMR2RLH__SHIFT);
   // [TMR2RLH - Timer 2 Reload High Byte]$
 
   // $[TMR2RLL - Timer 2 Reload Low Byte]
   /***********************************************************************
-   - Timer 2 Reload Low Byte = 0x18
+   - Timer 2 Reload Low Byte = 0x0C
    ***********************************************************************/
-  TMR2RLL = (0x18 << TMR2RLL_TMR2RLL__SHIFT);
+  TMR2RLL = (0x0C << TMR2RLL_TMR2RLL__SHIFT);
   // [TMR2RLL - Timer 2 Reload Low Byte]$
 
   // $[TMR2CN0]
@@ -1172,10 +1182,6 @@ TIMER16_3_enter_DefaultMode_from_smbus_reset (void)
   // [Timer Initialization]$
 
   // $[TMR3CN0 - Timer 3 Control]
-  /***********************************************************************
-   - External Clock is RTC. Capture trigger is External Oscillator/8
-   ***********************************************************************/
-  TMR3CN0 |= TMR3CN0_T3XCLK__RTC_CAP_EXTOSC;
   // [TMR3CN0 - Timer 3 Control]$
 
   // $[TMR3H - Timer 3 High Byte]
@@ -1194,16 +1200,16 @@ TIMER16_3_enter_DefaultMode_from_smbus_reset (void)
 
   // $[TMR3RLH - Timer 3 Reload High Byte]
   /***********************************************************************
-   - Timer 3 Reload High Byte = 0xFC
+   - Timer 3 Reload High Byte = 0x5D
    ***********************************************************************/
-  TMR3RLH = (0xFC << TMR3RLH_TMR3RLH__SHIFT);
+  TMR3RLH = (0x5D << TMR3RLH_TMR3RLH__SHIFT);
   // [TMR3RLH - Timer 3 Reload High Byte]$
 
   // $[TMR3RLL - Timer 3 Reload Low Byte]
   /***********************************************************************
-   - Timer 3 Reload Low Byte = 0xCD
+   - Timer 3 Reload Low Byte = 0x3D
    ***********************************************************************/
-  TMR3RLL = (0xCD << TMR3RLL_TMR3RLL__SHIFT);
+  TMR3RLL = (0x3D << TMR3RLL_TMR3RLL__SHIFT);
   // [TMR3RLL - Timer 3 Reload Low Byte]$
 
   // $[TMR3CN0]

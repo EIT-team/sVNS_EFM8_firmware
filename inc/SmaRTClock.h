@@ -23,7 +23,7 @@
 //
 // Please configure the following options
 //
-#define SYSCLK  20000000
+#define SYSCLK  10000000
 
 #define SMARTCLOCK_ENABLED   1
 

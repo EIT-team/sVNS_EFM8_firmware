@@ -12,9 +12,9 @@
 // Global CONSTANTS
 //-----------------------------------------------------------------------------
 
-#define  SYSCLK         20000000       // System clock frequency in Hz
+#define  SYSCLK         10000000       // System clock frequency in Hz
 
-#define  SMB_FREQUENCY  10683          // Target SCL clock rate
+#define  SMB_FREQUENCY  13020          // Target SCL clock rate
                                        // This example supports between 10kHz
                                        // and 100kHz
 
