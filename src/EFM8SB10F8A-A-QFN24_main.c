@@ -219,9 +219,9 @@ void T0_Waitus (uint8_t us)
       TCON_TR0 = 0;                         // Stop Timer0
       //TH0 = ((-SYSCLK/1000) >> 8);     // Overflow in 1ms
       // Overflow in 0xFC18 (64536) cycles, which for the 20 MHz is 50 us.
-      TH0 = 0xFF;
+      TH0 = 0xFE;
       //TL0 = ((-SYSCLK/1000) & 0xFF);
-      TL0 = 0xF0;
+      TL0 = 0x0C;
       TCON_TF0 = 0;                         // Clear overflow indicator
       TCON_TR0 = 1;                         // Start Timer0
       while (!TCON_TF0);                    // Wait for overflow
