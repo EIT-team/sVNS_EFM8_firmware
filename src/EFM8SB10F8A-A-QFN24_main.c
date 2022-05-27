@@ -33,11 +33,11 @@ uint8_t F_hz_LB;
 uint8_t F_hz;
 uint8_t Iset;
 bool stimDelivering;
-bool isStim;
+bool isStim = 0;
 //extern volatile uint16_t i_50us;
-extern volatile uint8_t i_50us;
-extern volatile float timer2;
-const float cycles_large = 2e6/50;
+//extern volatile uint8_t i_50us;
+//extern volatile float timer2;
+//const float cycles_large = 2e6/50;
 uint8_t set = 1;
 uint8_t j;
 float cycles;
@@ -52,6 +52,9 @@ void Pulse_Off(void);
 //void Monophasic(void);
 void Biphasic(void);
 void Biphasic_pulm(void);
+uint8_t getByte (uint16_t, uint8_t);
+void RTC_Fhz_set (uint16_t);
+
 
 // I2C
 // P0.0 - SMBus SDA
@@ -87,7 +90,7 @@ SI_SBIT (P17, SFR_P1, 7);                   // Pin 1.7 for MUX36S16 A0
 SI_SBIT (P16, SFR_P1, 6);                   // Pin 1.6 for MUX36S16 A1
 SI_SBIT (P15, SFR_P1, 5);                   // Pin 1.5 for MUX36S16 A2
 SI_SBIT (P14, SFR_P1, 4);                   // Pin 1.4 for MUX36S16 A3
-uint8_t mux36s16_state;                     // MUX36S16 state byte
+uint8_t mux36s16_state = 0;                     // MUX36S16 state byte
 // MUX36S16 state function
 void MUX36S16_output(uint8_t);
 
@@ -154,16 +157,16 @@ main (void)
   F_hz_LB = SAVE[3]; // Pulse frequency low byte
   T_on = (T_on_HB<<8)|(T_on_LB); // Combine PW into single hex
   F_hz = (F_hz_HB<<8)|(F_hz_LB); // Combine IPW into single hex
-  mux36d08_state = SAVE[4]; // save MUX36 switch state
+  // mux36d08_state = SAVE[4]; // save MUX36 switch state
   Iset = SAVE[8];
 
-  cycles = 20000 / F_hz; // number of cycles for 50 us/20 kHz timer for a given pulse frequency
+//  cycles = 20000 / F_hz; // number of cycles for 50 us/20 kHz timer for a given pulse frequency
 
   P05 = 1;              // Enable LT8410, enable MUX36D08 and 2x MUX36S16
-  half_T_on = (float) T_on / 2.0;
+//  half_T_on = (float) T_on / 2.0;
   TMR3CN0 |= TMR3CN0_TR3__RUN; // start timer 3 for stimulation
   while(1){
-
+      Biphasic_pulm();
   };
 }
 
@@ -238,7 +241,8 @@ void T0_Waitus (uint8_t us)
 void Biphasic_pulm(void){
   // start shunted
   Polarity(0);
-  MUX36S16_output(0);
+  //MUX36S16_output(mux36s16_state);
+  //RTC_Fhz_set(20);
   while(1){
       // Handle RTC failure
       if(RTC_Failure)
@@ -257,18 +261,27 @@ void Biphasic_pulm(void){
                            // that we have detected an alarm
                            // and are handling the alarm event
 
+           MUX36S16_output(mux36s16_state);
            isStim = !isStim;       // Change stim state
-
+           if (mux36s16_state < 16){
+           mux36s16_state ++;
+           }
+           else {
+               mux36s16_state = 0;
+           }
           }
+      // Stimulation state. Stay awake.
       if (isStim) {
-
-        while(RTC_Alarm == 0) {
-            // Initiate interrupts
-        }
+          // Wait for next alarm or clock failure, then clear flags
+          // Initiate interrupts
         while((PMU0CF & RTCAWK) == 0);
         if(PMU0CF & RTCAWK) RTC_Alarm = 1;
         if(PMU0CF & RTCFWK) RTC_Failure = 1;
         PMU0CF = 0x20;
+      }
+      else {
+          // Interburst state. Place the device into the sleep mode
+          LPM(SLEEP);  // Enter Sleep Until Next Alarm
       }
     }
 }
@@ -368,4 +381,63 @@ void MUX36D08_output(uint8_t mux36d08_state){
   P02 = (mux36d08_state & (1 << (1-1))) ? 1 : 0; // Get 1st bit of MUX36D08 state byte
   P03 = (mux36d08_state & (1 << (2-1))) ? 1 : 0; // Get 2nd bit of the state byte
   P04 = (mux36d08_state & (1 << (3-1))) ? 1 : 0; // Get 3rd bit of the state byte
+}
+
+/*
+ * Function: getByte
+ * Takes the integer number and the byte number of interest
+ * Returns the N-th byte of the integer. First byte starts at 0, i.e.
+ * For the LSB byte (LB) N = 0, for the second byte (MSB) N =1.
+ */
+uint8_t
+getByte (uint16_t number, uint8_t N)
+{
+  uint8_t x = (number >> (8 * N)) & 0xff;
+  return x;
+}
+
+/*
+ * Function: RTC_Fhz_set
+ * Sets pulse frequency as RTC alarm to wake up the MCU at pulse generation time
+ * freq - low byte of the frequency hexadecimal value
+ */
+void
+RTC_Fhz_set (uint16_t freq) // make freq float instead of uiunt16??
+{
+  uint8_t alarm0; // RTC set alarm LB
+  uint8_t alarm1; // RTC set alarm HB
+  // Conversion to the RTC alarm value
+  uint16_t F_alarm_value;
+//  F_alarm_value = 16384 / freq; // 16384 is the RTC low freq oscillator. However, the RTC LFosc behaves like 32768 counter. (see RTC reference manual)
+  F_alarm_value = 32768 / freq;
+  // decToHexa(F_alarm_value); // convert to Hex
+  // Get high and low bytes of F_alarm_value:
+  alarm0 = getByte (F_alarm_value, 0);
+  alarm1 = getByte (F_alarm_value, 1);
+  // Re-set the RTC from the start
+  // RTC oscillator control
+
+  RTC0ADR = RTC0XCN0;
+  RTC0DAT = RTC0XCN0_XMODE__SELF_OSCILLATE | RTC0XCN0_AGCEN__DISABLED
+      | RTC0XCN0_BIASX2__DISABLED | RTC0XCN0_LFOEN__ENABLED;
+  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
+    ;
+  // Program RTC alarm value 0
+  RTC0ADR = ALARM0;
+  RTC0DAT = (alarm0 << ALARM0_ALARM0__SHIFT);
+  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
+    ;
+  // Program RTC alarm value 1
+  RTC0ADR = ALARM1;
+  RTC0DAT = (alarm1 << ALARM1_ALARM1__SHIFT);
+  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
+    ;
+  // RTC control. Prepare to be started, do not start yet.
+  RTC0ADR = RTC0CN0;
+  RTC0DAT = RTC0CN0_RTC0EN__ENABLED | RTC0CN0_RTC0TR__STOP
+      | RTC0CN0_MCLKEN__ENABLED | RTC0CN0_RTC0AEN__DISABLED
+      | RTC0CN0_ALRM__NOT_SET | RTC0CN0_RTC0CAP__NOT_SET
+      | RTC0CN0_RTC0SET__NOT_SET;
+  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
+    ;
 }

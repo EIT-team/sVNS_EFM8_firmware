@@ -10,12 +10,12 @@
 #include <SI_EFM8SB1_Register_Enums.h>
 #include "EFM8SB1_SMBus_Master_Multibyte.h"
 //volatile uint16_t i_50us = 0;
-volatile uint8_t i_50us = 0;
-volatile float timer2 = 0;
+//volatile uint8_t i_50us = 0;
+//volatile float timer2 = 0;
 // extern volatile uint8_t isstim;
 //extern float cycles;
 // extern float cycles_large;
-extern float half_T_on;
+//extern float half_T_on;
 
 extern void Polarity(uint8_t);
 extern void Pulse_On(void);
@@ -155,7 +155,6 @@ SI_INTERRUPT(TIMER3_ISR, TIMER3_IRQn)
   {
   uint8_t set_biphasic = 0;
   Polarity(0); // start shunted
-  MUX36S16_output(0);
 //  TMR2CN0 |= TMR2CN0_TR2__RUN; // Start Timer 2 for pulse width timing
           Polarity(1);   // Forward polarity
           Pulse_On();

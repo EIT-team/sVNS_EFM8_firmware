@@ -782,12 +782,12 @@ RTC_0_enter_DefaultMode_from_smbus_reset (void)
   // $[RTC0XCN - RTC Oscillator Control]
   /***********************************************************************
    - Self-Oscillate Mode selected
-   - Disable AGC
+   - Enable AGC
    - Disable the Bias Double feature
    - LFOSC0 enabled and selected as RTC oscillator source
    ***********************************************************************/
   RTC0ADR = RTC0XCN0;
-  RTC0DAT = RTC0XCN0_XMODE__SELF_OSCILLATE | RTC0XCN0_AGCEN__DISABLED
+  RTC0DAT = RTC0XCN0_XMODE__SELF_OSCILLATE | RTC0XCN0_AGCEN__ENABLED
       | RTC0XCN0_BIASX2__DISABLED | RTC0XCN0_LFOEN__ENABLED;
   while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
     ;    //Poll Busy Bit
@@ -809,19 +809,26 @@ RTC_0_enter_DefaultMode_from_smbus_reset (void)
   // [CAPTURE3 - RTC Timer Capture 3]$
 
   // $[ALARM0 - RTC Alarm Programmed Value 0]
-  /***********************************************************************
-   - RTC Alarm Programmed Value 0 = 0x04
-   ***********************************************************************/
-  RTC0ADR = ALARM0;
-  RTC0DAT = (0x04 << ALARM0_ALARM0__SHIFT);
-  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
-    ;    //Poll Busy Bit
   // [ALARM0 - RTC Alarm Programmed Value 0]$
 
   // $[ALARM1 - RTC Alarm Programmed Value 1]
+  /***********************************************************************
+   - RTC Alarm Programmed Value 1 = 0x80
+   ***********************************************************************/
+  RTC0ADR = ALARM1;
+  RTC0DAT = (0x80 << ALARM1_ALARM1__SHIFT);
+  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
+    ;    //Poll Busy Bit
   // [ALARM1 - RTC Alarm Programmed Value 1]$
 
   // $[ALARM2 - RTC Alarm Programmed Value 2]
+  /***********************************************************************
+   - RTC Alarm Programmed Value 2 = 0x02
+   ***********************************************************************/
+  RTC0ADR = ALARM2;
+  RTC0DAT = (0x02 << ALARM2_ALARM2__SHIFT);
+  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
+    ;    //Poll Busy Bit
   // [ALARM2 - RTC Alarm Programmed Value 2]$
 
   // $[ALARM3 - RTC Alarm Programmed Value 3]
@@ -832,15 +839,16 @@ RTC_0_enter_DefaultMode_from_smbus_reset (void)
    - Enable RTC oscillator
    - RTC timer is running
    - Enable missing RTC detector
-   - Enable RTC alarm
-   - Alarm event flag is set or enable the auto reset function
+   - Disable RTC alarm
+   - Alarm event flag is not set or disable the auto reset function
    - Do not start a capture operation
    - Do not start a set operation
    ***********************************************************************/
   RTC0ADR = RTC0CN0;
   RTC0DAT = RTC0CN0_RTC0EN__ENABLED | RTC0CN0_RTC0TR__RUN
-      | RTC0CN0_MCLKEN__ENABLED | RTC0CN0_RTC0AEN__ENABLED | RTC0CN0_ALRM__SET
-      | RTC0CN0_RTC0CAP__NOT_SET | RTC0CN0_RTC0SET__NOT_SET;
+      | RTC0CN0_MCLKEN__ENABLED | RTC0CN0_RTC0AEN__DISABLED
+      | RTC0CN0_ALRM__NOT_SET | RTC0CN0_RTC0CAP__NOT_SET
+      | RTC0CN0_RTC0SET__NOT_SET;
   while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
     ;    //Poll Busy Bit
 
