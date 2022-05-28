@@ -22,6 +22,8 @@ extern void Pulse_On(void);
 extern void Pulse_Off(void);
 extern void MUX36S16_output(uint8_t);
 extern void T0_Waitus (uint8_t); // waits 50 us
+SI_SBIT (P05, SFR_P0, 5);                   // Pin 0.5 for SHDN enable/disable
+
 
 
 //-----------------------------------------------------------------------------
@@ -160,8 +162,12 @@ SI_INTERRUPT(TIMER3_ISR, TIMER3_IRQn)
           Pulse_On();
           T0_Waitus(1);
            // (-) phase for next 50 us
+          Pulse_Off();
+         // P05 = 0;
           Polarity(0);   // Shunted
           Polarity(2);  // Reverse
+          Pulse_On();
+         // P05 = 1;
           T0_Waitus(1);
           // 100 us passed, stop stimulation
           Polarity(0);   // Shunted
