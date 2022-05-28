@@ -263,12 +263,7 @@ void Biphasic_pulm(void){
 
            MUX36S16_output(mux36s16_state);
            isStim = !isStim;       // Change stim state
-           if (mux36s16_state < 16){
-           mux36s16_state ++;
-           }
-           else {
-               mux36s16_state = 0;
-           }
+
           }
       // Stimulation state. Stay awake.
       if (isStim) {
@@ -278,6 +273,12 @@ void Biphasic_pulm(void){
         if(PMU0CF & RTCAWK) RTC_Alarm = 1;
         if(PMU0CF & RTCFWK) RTC_Failure = 1;
         PMU0CF = 0x20;
+        if (mux36s16_state < 16){
+        mux36s16_state ++;
+        }
+        else {
+            mux36s16_state = 0;
+        }
       }
       else {
           // Interburst state. Place the device into the sleep mode
