@@ -241,7 +241,7 @@ void T0_Waitus (uint8_t us)
 void Biphasic_pulm(void){
   // start shunted
   Polarity(0);
-  //MUX36S16_output(mux36s16_state);
+  MUX36S16_output(0);
   //RTC_Fhz_set(20);
   while(1){
       // Handle RTC failure
@@ -261,7 +261,7 @@ void Biphasic_pulm(void){
                            // that we have detected an alarm
                            // and are handling the alarm event
 
-           MUX36S16_output(mux36s16_state);
+           //MUX36S16_output(mux36s16_state);
            isStim = !isStim;       // Change stim state
 
           }
