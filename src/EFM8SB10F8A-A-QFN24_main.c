@@ -261,7 +261,7 @@ void Biphasic_pulm(void){
                            // that we have detected an alarm
                            // and are handling the alarm event
 
-           //MUX36S16_output(mux36s16_state);
+           //
            isStim = !isStim;       // Change stim state
 
           }
@@ -269,12 +269,25 @@ void Biphasic_pulm(void){
       if (isStim) {
           // Wait for next alarm or clock failure, then clear flags
           // Initiate interrupts
+          if (mux36s16_state == 13){
+              mux36s16_state = 14;
+              //continue;
+          }
+         // else
+         // {
+         //   if (mux36s16_state == 14){
+         //     mux36s16_state = 15;}
+              //continue;
+         // }
+        MUX36S16_output(mux36s16_state);
+        // MUX36S16_output(10);
         while((PMU0CF & RTCAWK) == 0);
         if(PMU0CF & RTCAWK) RTC_Alarm = 1;
         if(PMU0CF & RTCFWK) RTC_Failure = 1;
         PMU0CF = 0x20;
-        if (mux36s16_state < 16){
-        mux36s16_state ++;
+        if ((mux36s16_state < 16)){
+
+            mux36s16_state ++;
         }
         else {
             mux36s16_state = 0;
@@ -282,6 +295,7 @@ void Biphasic_pulm(void){
       }
       else {
           // Interburst state. Place the device into the sleep mode
+
           LPM(SLEEP);  // Enter Sleep Until Next Alarm
       }
     }

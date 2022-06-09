@@ -812,21 +812,14 @@ RTC_0_enter_DefaultMode_from_smbus_reset (void)
   // [ALARM0 - RTC Alarm Programmed Value 0]$
 
   // $[ALARM1 - RTC Alarm Programmed Value 1]
-  /***********************************************************************
-   - RTC Alarm Programmed Value 1 = 0x80
-   ***********************************************************************/
-  RTC0ADR = ALARM1;
-  RTC0DAT = (0x80 << ALARM1_ALARM1__SHIFT);
-  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
-    ;    //Poll Busy Bit
   // [ALARM1 - RTC Alarm Programmed Value 1]$
 
   // $[ALARM2 - RTC Alarm Programmed Value 2]
   /***********************************************************************
-   - RTC Alarm Programmed Value 2 = 0x02
+   - RTC Alarm Programmed Value 2 = 0x0F
    ***********************************************************************/
   RTC0ADR = ALARM2;
-  RTC0DAT = (0x02 << ALARM2_ALARM2__SHIFT);
+  RTC0DAT = (0x0F << ALARM2_ALARM2__SHIFT);
   while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
     ;    //Poll Busy Bit
   // [ALARM2 - RTC Alarm Programmed Value 2]$
