@@ -271,22 +271,13 @@ void Biphasic_pulm(void){
           // Initiate interrupts
           if (mux36s16_state == 13){
               mux36s16_state = 14;
-              //continue;
           }
-         // else
-         // {
-         //   if (mux36s16_state == 14){
-         //     mux36s16_state = 15;}
-              //continue;
-         // }
         MUX36S16_output(mux36s16_state);
-        // MUX36S16_output(10);
         while((PMU0CF & RTCAWK) == 0);
         if(PMU0CF & RTCAWK) RTC_Alarm = 1;
         if(PMU0CF & RTCFWK) RTC_Failure = 1;
         PMU0CF = 0x20;
         if ((mux36s16_state < 16)){
-
             mux36s16_state ++;
         }
         else {
@@ -295,7 +286,6 @@ void Biphasic_pulm(void){
       }
       else {
           // Interburst state. Place the device into the sleep mode
-
           LPM(SLEEP);  // Enter Sleep Until Next Alarm
       }
     }

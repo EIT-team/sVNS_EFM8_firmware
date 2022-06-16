@@ -839,16 +839,15 @@ RTC_0_enter_DefaultMode_from_smbus_reset (void)
    - Enable RTC oscillator
    - RTC timer is running
    - Enable missing RTC detector
-   - Disable RTC alarm
-   - Alarm event flag is not set or disable the auto reset function
+   - Enable RTC alarm
+   - Alarm event flag is set or enable the auto reset function
    - Do not start a capture operation
    - Do not start a set operation
    ***********************************************************************/
   RTC0ADR = RTC0CN0;
   RTC0DAT = RTC0CN0_RTC0EN__ENABLED | RTC0CN0_RTC0TR__RUN
-      | RTC0CN0_MCLKEN__ENABLED | RTC0CN0_RTC0AEN__DISABLED
-      | RTC0CN0_ALRM__NOT_SET | RTC0CN0_RTC0CAP__NOT_SET
-      | RTC0CN0_RTC0SET__NOT_SET;
+      | RTC0CN0_MCLKEN__ENABLED | RTC0CN0_RTC0AEN__ENABLED | RTC0CN0_ALRM__SET
+      | RTC0CN0_RTC0CAP__NOT_SET | RTC0CN0_RTC0SET__NOT_SET;
   while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
     ;    //Poll Busy Bit
 
