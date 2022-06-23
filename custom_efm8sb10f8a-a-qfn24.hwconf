@@ -76,15 +76,15 @@
     <property object="PCA_0" propertyId="pca.watchdogcontrol.enablewatchdogtimer" value="Disabled"/>
     <property object="RSTSRC_0" propertyId="ABPeripheral.included" value="true"/>
     <property object="RTC_0" propertyId="ABPeripheral.included" value="true"/>
-    <property object="RTC_0" propertyId="rtc.hidden.rtcalarmprogrammedvalue1" value="128"/>
+    <property object="RTC_0" propertyId="rtc.hidden.rtcalarmprogrammedvalue1" value="112"/>
     <property object="RTC_0" propertyId="rtc.hidden.rtcalarmprogrammedvalue2" value="2"/>
     <property object="RTC_0" propertyId="rtc.hidden.selectandenablelowfrequencyoscillator" value="Enabled"/>
-    <property object="RTC_0" propertyId="rtc.rtcalarm.actualalarmperiod" value="10.00 seconds"/>
-    <property object="RTC_0" propertyId="rtc.rtcalarm.alarmprogrammedvalue" value="163840"/>
+    <property object="RTC_0" propertyId="rtc.rtcalarm.actualalarmperiod" value="9.75 seconds"/>
+    <property object="RTC_0" propertyId="rtc.rtcalarm.alarmprogrammedvalue" value="159744"/>
     <property object="RTC_0" propertyId="rtc.rtcalarm.enablealarmautoreset" value="Enabled"/>
     <property object="RTC_0" propertyId="rtc.rtcalarm.enablertcalarm" value="Enabled"/>
     <property object="RTC_0" propertyId="rtc.rtcalarm.rtcoscillatorfrequency" value="16384"/>
-    <property object="RTC_0" propertyId="rtc.rtcalarm.targetalarmperiod" value="10"/>
+    <property object="RTC_0" propertyId="rtc.rtcalarm.targetalarmperiod" value="9.75"/>
     <property object="RTC_0" propertyId="rtc.rtcalarm.targetalarmperiodunits" value="seconds"/>
     <property object="RTC_0" propertyId="rtc.rtcconfiguration.enablemissingrtcdetector" value="Enabled"/>
     <property object="RTC_0" propertyId="rtc.rtcconfiguration.enablertcoscillatorautomaticgaincontrol" value="Enabled"/>
