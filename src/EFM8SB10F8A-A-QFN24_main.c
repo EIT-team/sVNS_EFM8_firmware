@@ -269,9 +269,7 @@ void Biphasic_pulm(void){
       if (isStim) {
           // Wait for next alarm or clock failure, then clear flags
           // Initiate interrupts
-          if (mux36s16_state == 13){
-              mux36s16_state = 14;
-          }
+
         MUX36S16_output(mux36s16_state);
         while((PMU0CF & RTCAWK) == 0);
         if(PMU0CF & RTCAWK) RTC_Alarm = 1;
@@ -279,6 +277,9 @@ void Biphasic_pulm(void){
         PMU0CF = 0x20;
         if ((mux36s16_state < 16)){
             mux36s16_state ++;
+            if (mux36s16_state == 13){
+                mux36s16_state = 14;
+            }
         }
         else {
             mux36s16_state = 0;
