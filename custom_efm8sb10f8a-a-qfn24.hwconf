@@ -8,8 +8,7 @@
     <property object="ADC_0" propertyId="adc.control.timer3overflowfrequency" value="19.000 Hz"/>
     <property object="ADC_0" propertyId="adc.multiplexerselection.positiveinputselection" value="ADC0.6 (P0.6)"/>
     <property object="ADC_0" propertyId="adc.view.view" value="Advanced"/>
-    <property object="ADC_0" propertyId="adc.windowcompare.greaterthanhighbyte" value="0"/>
-    <property object="ADC_0" propertyId="adc.windowcompare.greaterthanlowbyte" value="0"/>
+    <property object="ADC_0" propertyId="adc.windowcompare.greaterthanvalue" value="65535"/>
     <property object="CLOCK_0" propertyId="ABPeripheral.included" value="true"/>
     <property object="CLOCK_0" propertyId="clock.clockselect.clocksourcedivider" value="SYSCLK / 2"/>
     <property object="CLOCK_0" propertyId="clock.clockselect.selectclocksource" value="Low-Power Oscillator"/>

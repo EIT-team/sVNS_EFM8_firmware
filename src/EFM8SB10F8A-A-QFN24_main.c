@@ -15,6 +15,7 @@
 #include "EFM8SB1_SMBus_Master_Multibyte.h"
 #include "power.h"
 #include "SmaRTClock.h"
+#include "adc_0.h"
 
 // $[Generated Includes]
 // [Generated Includes]$
@@ -101,6 +102,12 @@ SI_SBIT (P04, SFR_P0, 4);                   // Pin 0.4 for MUX36D08 A2
 uint8_t mux36d08_state;                     // MUX36D08 state byte
 // MUX36D08 state function
 void MUX36D08_output(uint8_t);
+
+// ADC
+void sampleADC(void);
+#define VREF_MV         (1650UL)
+#define ADC_MAX_RESULT  ((1 << 10)-1) // 10 bit ADC
+uint16_t ADC0_convertSampleToMillivolts(uint16_t);
 
 //-----------------------------------------------------------------------------
 // SiLabs_Startup() Routine
@@ -446,4 +453,30 @@ RTC_Fhz_set (uint16_t freq) // make freq float instead of uiunt16??
       | RTC0CN0_RTC0SET__NOT_SET;
   while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
     ;
+}
+
+void sampleADC(void)
+{
+  uint16_t mV; uint8_t mV1; uint8_t mV2;
+  uint8_t SMB_DATA_OUT[3];
+  ADC0_startConversion();
+  while(!ADC0_isConversionComplete()); // Wait for conversion to complete
+  mV = ADC0_convertSampleToMillivolts(ADC0_getResult());
+  mV1 = getByte(mV,0);
+  mV2 = getByte(mV,1);
+  SMB_DATA_OUT[0] = 0x0A;
+  SMB_DATA_OUT[1] = mV1;
+  SMB_DATA_OUT[2] = mV2;
+  TARGET = SLAVE_ADDR;         // I2C slave address for NT3H is 0xAA
+  SMB_Write();                     // Initiate SMBus write
+}
+
+uint16_t ADC0_convertSampleToMillivolts(uint16_t sample)
+{
+  // The measured voltage applied to P1.7 is given by:
+  //
+  //                           Vref (mV)
+  //   measurement (mV) =   --------------- * result (bits)
+  //                       (2^10)-1 (bits)
+  return ((uint32_t)sample * VREF_MV) / ADC_MAX_RESULT;
 }

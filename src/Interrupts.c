@@ -23,6 +23,7 @@ extern void Pulse_Off(void);
 extern void MUX36S16_output(uint8_t);
 extern void T0_Waitus (uint8_t); // waits 50 us
 SI_SBIT (P05, SFR_P0, 5);                   // Pin 0.5 for SHDN enable/disable
+extern void sampleADC(void);
 
 
 
@@ -160,6 +161,7 @@ SI_INTERRUPT(TIMER3_ISR, TIMER3_IRQn)
 //  TMR2CN0 |= TMR2CN0_TR2__RUN; // Start Timer 2 for pulse width timing
           Polarity(1);   // Forward polarity
           Pulse_On();
+          sampleADC();
           T0_Waitus(1);
            // (-) phase for next 50 us
           Pulse_Off();
@@ -167,10 +169,12 @@ SI_INTERRUPT(TIMER3_ISR, TIMER3_IRQn)
           Polarity(0);   // Shunted
           Polarity(2);  // Reverse
           Pulse_On();
+          sampleADC();
          // P05 = 1;
           T0_Waitus(1);
           // 100 us passed, stop stimulation
           Polarity(0);   // Shunted
+          sampleADC();
           Pulse_Off();
 
 //  TMR2CN0 |= TMR2CN0_TR2__STOP;

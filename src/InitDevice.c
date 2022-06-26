@@ -931,17 +931,9 @@ ADC_0_enter_DefaultMode_from_smbus_reset (void)
   // [ADC0CF - ADC0 Configuration]$
 
   // $[ADC0GTH - ADC0 Greater-Than High Byte]
-  /***********************************************************************
-   - Greater-Than High Byte = 0x00
-   ***********************************************************************/
-  ADC0GTH = (0x00 << ADC0GTH_ADC0GTH__SHIFT);
   // [ADC0GTH - ADC0 Greater-Than High Byte]$
 
   // $[ADC0GTL - ADC0 Greater-Than Low Byte]
-  /***********************************************************************
-   - Greater-Than Low Byte = 0x00
-   ***********************************************************************/
-  ADC0GTL = (0x00 << ADC0GTL_ADC0GTL__SHIFT);
   // [ADC0GTL - ADC0 Greater-Than Low Byte]$
 
   // $[ADC0LTH - ADC0 Less-Than High Byte]
