@@ -174,7 +174,6 @@ SI_INTERRUPT(TIMER3_ISR, TIMER3_IRQn)
           T0_Waitus(1);
           // 100 us passed, stop stimulation
           Polarity(0);   // Shunted
-          sampleADC();
           Pulse_Off();
 
 //  TMR2CN0 |= TMR2CN0_TR2__STOP;
