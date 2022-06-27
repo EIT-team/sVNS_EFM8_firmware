@@ -973,10 +973,13 @@ SMBUS_0_enter_DefaultMode_from_smbus_reset (void)
 
   // $[SMB0CF - SMBus 0 Configuration]
   /***********************************************************************
+   - Timer 2 High Byte Overflow
    - Slave states are inhibited
    - Enable the SMBus module
    ***********************************************************************/
-  SMB0CF |= SMB0CF_INH__SLAVE_DISABLED | SMB0CF_ENSMB__ENABLED;
+  SMB0CF &= ~SMB0CF_SMBCS__FMASK;
+  SMB0CF |= SMB0CF_SMBCS__TIMER2_HIGH | SMB0CF_INH__SLAVE_DISABLED
+      | SMB0CF_ENSMB__ENABLED;
   // [SMB0CF - SMBus 0 Configuration]$
 
 }
@@ -1006,11 +1009,11 @@ INTERRUPT_0_enter_DefaultMode_from_smbus_reset (void)
    - CP0 interrupt set to low priority level
    - PCA0 interrupt set to low priority level
    - RTC Alarm interrupt set to low priority level
-   - SMB0 interrupt set to low priority level
+   - SMB0 interrupt set to high priority level
    - Timer 3 interrupts set to high priority level
    ***********************************************************************/
   EIP1 = EIP1_PADC0__LOW | EIP1_PWADC0__LOW | EIP1_PCP0__LOW | EIP1_PPCA0__LOW
-      | EIP1_PRTC0A__LOW | EIP1_PSMB0__LOW | EIP1_PT3__HIGH;
+      | EIP1_PRTC0A__LOW | EIP1_PSMB0__HIGH | EIP1_PT3__HIGH;
   // [EIP1 - Extended Interrupt Priority 1]$
 
   // $[IE - Interrupt Enable]
@@ -1115,19 +1118,23 @@ TIMER16_2_enter_DefaultMode_from_smbus_reset (void)
 
   // $[TMR2RLH - Timer 2 Reload High Byte]
   /***********************************************************************
-   - Timer 2 Reload High Byte = 0xFE
+   - Timer 2 Reload High Byte = 0xFF
    ***********************************************************************/
-  TMR2RLH = (0xFE << TMR2RLH_TMR2RLH__SHIFT);
+  TMR2RLH = (0xFF << TMR2RLH_TMR2RLH__SHIFT);
   // [TMR2RLH - Timer 2 Reload High Byte]$
 
   // $[TMR2RLL - Timer 2 Reload Low Byte]
   /***********************************************************************
-   - Timer 2 Reload Low Byte = 0x0C
+   - Timer 2 Reload Low Byte = 0x06
    ***********************************************************************/
-  TMR2RLL = (0x0C << TMR2RLL_TMR2RLL__SHIFT);
+  TMR2RLL = (0x06 << TMR2RLL_TMR2RLL__SHIFT);
   // [TMR2RLL - Timer 2 Reload Low Byte]$
 
   // $[TMR2CN0]
+  /***********************************************************************
+   - Start Timer 2 running
+   ***********************************************************************/
+  TMR2CN0 |= TMR2CN0_TR2__RUN;
   // [TMR2CN0]$
 
   // $[Timer Restoration]

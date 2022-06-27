@@ -198,7 +198,7 @@ SI_INTERRUPT(TIMER3_ISR, TIMER3_IRQn)
 //  TMR2CN0 |= TMR2CN0_TR2__RUN; // Start Timer 2 for pulse width timing
     Polarity(1);// Forward polarity
     Pulse_On();
-    sampleADC();
+    //sampleADC();
     T0_Waitus(1);
     // (-) phase for next 50 us
     Pulse_Off();
