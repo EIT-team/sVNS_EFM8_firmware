@@ -68,13 +68,6 @@ uint8_t TARGET;                             // Target SMBus slave address
 volatile bool SMB_BUSY;
 volatile bool SMB_RW;
 uint16_t NUM_ERRORS;
-uint8_t SMB_DATA_OUT[NUM_BYTES_WR];
-uint8_t SMB_DATA_IN[NUM_BYTES_RD];
-uint8_t SAVE[16];
-uint8_t TARGET;                             // Target SMBus slave address
-volatile bool SMB_BUSY;
-volatile bool SMB_RW;
-uint16_t NUM_ERRORS;
 SI_SBIT (SDA, SFR_P0, 0);                   // SMBus on P0.0
 SI_SBIT (SCL, SFR_P0, 1);                   // and P0.1
 
@@ -149,7 +142,7 @@ main (void)
 
   // SMBus comms
   // Read data from NT3H
-  SMB_DATA_OUT[0] = MEMA;      // NT3H Address to Read
+  SMB_DATA_OUT[0] = 31;      // NT3H Address to Read
   TARGET = SLAVE_ADDR;         // I2C slave address for NT3H is 0xAA
   SMB_Write();                 // Write sequence with the MEMA as per NT3H data sheet
   TARGET = SLAVE_ADDR;
@@ -320,6 +313,7 @@ void SMB_Write (void)
    SMB_BUSY = 1;                       // Claim SMBus (set to busy)
    SMB_RW = 0;                         // Mark this transfer as a WRITE
    SMB0CN0_STA = 1;                            // Start transfer
+   while (SMB_BUSY);
 }
 
 void SMB_Read (void)

@@ -24,8 +24,11 @@ extern void MUX36S16_output(uint8_t);
 extern void T0_Waitus (uint8_t); // waits 50 us
 SI_SBIT (P05, SFR_P0, 5);                   // Pin 0.5 for SHDN enable/disable
 extern void sampleADC(void);
-
-
+// NT3H I2C parameters
+static uint8_t MEMA_read = 0x01;
+static uint8_t MEMA_write = 0x02;
+bool SA_sent = 0;
+bool MEMA_sent = 0;
 
 //-----------------------------------------------------------------------------
 // SMBUS0_ISR
@@ -43,6 +46,7 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
     static uint8_t sent_byte_counter;
     static uint8_t rec_byte_counter;
 
+
     if (SMB0CN0_ARBLOST == 0)// Check for errors
       {
         // Normal operation
@@ -53,15 +57,16 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
             SMB0DAT = TARGET;// Load address of the target slave
             SMB0DAT &= 0xFE;// Clear the LSB of the address for the
             // R/W bit
-            SMB0DAT |= (uint8_t) SMB_RW;// Load R/W bit
+            SMB0DAT |= (uint8_t) 0;// Load R/W bit
             SMB0CN0_STA = 0;// Manually clear START bit
             rec_byte_counter = 1;// Reset the counter
             sent_byte_counter = 1;// Reset the counter
+            SA_sent = 1;
             break;
 
             // Master Transmitter: Data byte transmitted
             case SMB_MTDB:
-            if (SMB0CN0_ACK)// Slave SMB0CN0_ACK?
+            if (SMB0CN0_ACK && SA_sent && MEMA_sent)// Slave SMB0CN0_ACK?
               {
                 if (SMB_RW == WRITE)    // If this transfer is a WRITE,
                   {
@@ -84,6 +89,17 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
                 // to receive mode)
 
               }
+            else if (SMB0CN0_ACK && SA_sent) {
+                if (SMB_RW == WRITE) {
+                    SMB0DAT = MEMA_write;
+                    MEMA_sent = 1;
+                }
+                else {
+                    SMB0DAT = MEMA_read;
+                    MEMA_sent = 1;
+                }
+
+            }
             else                       // If slave NACK,
               {
                 SMB0CN0_STO = 1;                // Send STOP condition, followed

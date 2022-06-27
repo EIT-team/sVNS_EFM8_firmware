@@ -31,7 +31,7 @@
 #define  SMB_MRDB       0x80           // (MR) data byte received
 // End status vector definition
 
-#define  NUM_BYTES_WR   1              // Number of bytes to write
+#define  NUM_BYTES_WR   16              // Number of bytes to write
                                        // Master -> Slave
 #define  NUM_BYTES_RD   16              // Number of bytes to read
                                        // Master <- Slave
