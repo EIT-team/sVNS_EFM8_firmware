@@ -142,7 +142,7 @@ main (void)
 
   // SMBus comms
   // Read data from NT3H
-  SMB_DATA_OUT[0] = 31;      // NT3H Address to Read
+//  SMB_DATA_OUT[0] = 5;      // NT3H Address to Read
 //  TARGET = SLAVE_ADDR;         // I2C slave address for NT3H is 0xAA
 //  SMB_Write();                 // Write sequence with the MEMA as per NT3H data sheet
   TARGET = SLAVE_ADDR;
@@ -313,6 +313,7 @@ void SMB_Write (void)
    SMB_BUSY = 1;                       // Claim SMBus (set to busy)
    SMB_RW = 0;                         // Mark this transfer as a WRITE
    SMB0CN0_STA = 1;                            // Start transfer
+
    while (SMB_BUSY);
 }
 
@@ -321,7 +322,6 @@ void SMB_Read (void)
    while (SMB_BUSY);               // Wait for bus to be free.
    SMB_BUSY = 1;                       // Claim SMBus (set to busy)
    SMB_RW = 1;                         // Mark this transfer as a READ
-
    SMB0CN0_STA = 1;                            // Start transfer
 
    while (SMB_BUSY);               // Wait for transfer to complete
@@ -452,7 +452,7 @@ RTC_Fhz_set (uint16_t freq) // make freq float instead of uiunt16??
 void sampleADC(void)
 {
   uint16_t mV; uint8_t mV1; uint8_t mV2;
-  uint8_t SMB_DATA_OUT[3];
+  //uint8_t SMB_DATA_OUT[3];
   ADC0_startConversion();
   while(!ADC0_isConversionComplete()); // Wait for conversion to complete
   mV = ADC0_convertSampleToMillivolts(ADC0_getResult());

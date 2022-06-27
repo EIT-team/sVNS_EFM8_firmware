@@ -17,13 +17,22 @@
 // extern float cycles_large;
 //extern float half_T_on;
 
-extern void Polarity(uint8_t);
-extern void Pulse_On(void);
-extern void Pulse_Off(void);
-extern void MUX36S16_output(uint8_t);
-extern void T0_Waitus (uint8_t); // waits 50 us
+extern void
+Polarity (uint8_t);
+extern void
+Pulse_On (void);
+extern void
+Pulse_Off (void);
+extern void
+MUX36S16_output (uint8_t);
+extern void
+T0_Waitus (uint8_t); // waits 50 us
 SI_SBIT (P05, SFR_P0, 5);                   // Pin 0.5 for SHDN enable/disable
-extern void sampleADC(void);
+// ADC
+#include "adc_0.h"
+bool ADC_CONVERSION_COMPLETE = false;
+extern void
+sampleADC (void);
 // NT3H I2C parameters
 static uint8_t MEMA_read = 0x01;
 static uint8_t MEMA_write = 0x02;
@@ -48,7 +57,6 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
     static uint8_t sent_byte_counter;
     static uint8_t rec_byte_counter;
 
-
     if (SMB0CN0_ARBLOST == 0)// Check for errors
       {
         // Normal operation
@@ -59,15 +67,17 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
             SMB0DAT = TARGET;// Load address of the target slave
             SMB0DAT &= 0xFE;// Clear the LSB of the address for the
             // R/W bit
-            if (Read_Init) { // Prepare the read mode
+            if (Read_Init)
+              { // Prepare the read mode
                 SMB0DAT |= (uint8_t) 1;// set 1 as per NT3H manual for DATA IN receive
                 SMB0CN0_STA = 0;// Manually clear START bit
-            }
-            else {
-            SMB0DAT |= (uint8_t) 0;// set 0 as per NT3H manual
-            SMB0CN0_STA = 0;// Manually clear START bit
-            }
-            rec_byte_counter = 1;// Reset the counter
+              }
+            else
+              {
+                SMB0DAT |= (uint8_t) 0; // set 0 as per NT3H manual
+                SMB0CN0_STA = 0;// Manually clear START bit
+              }
+            rec_byte_counter = 1; // Reset the counter
             sent_byte_counter = 1;// Reset the counter
             SA_sent = 1;
             break;
@@ -75,47 +85,49 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
             // Master Transmitter: Data byte transmitted
             case SMB_MTDB:
 //            if (SMB0CN0_ACK && SA_sent && MEMA_sent)// Slave SMB0CN0_ACK?
-              if (SMB0CN0_ACK && SA_sent && MEMA_sent == 0)
+            if (SMB0CN0_ACK && SA_sent && MEMA_sent == 0)
               {
-                  if (SMB_RW == WRITE) {
-                      SMB0DAT = MEMA_write;
-                      MEMA_sent = 1;
-                  }
-                  else {
-                      SMB0DAT = MEMA_read;
-                      MEMA_sent = 1;
-                  }
-                  break;
-              }
-              else if (SMB_RW == WRITE && MEMA_sent)    // If this transfer is a WRITE, and memory address has been sent
+                if (SMB_RW == WRITE)
                   {
-                    if (sent_byte_counter <= NUM_BYTES_WR)
-                      {
-                        // send data byte
-                        SMB0DAT = SMB_DATA_OUT[sent_byte_counter-1];
-                        sent_byte_counter++;
-                      }
-                    else
-                      {
-                        SMB0CN0_STO = 1; // Set SMB0CN0_STO to terminate transfer
-                        SMB_BUSY = 0;// And free SMBus interface
-                      }
+                    SMB0DAT = MEMA_write;
+                    MEMA_sent = 1;
                   }
-              else if (SMB_RW == 1 && MEMA_sent && Read_Init == 0) // If transfer is read, initiate STOP, then START, then first 7 bits of SA
-                   // then proceed to receive mode
-                {
-                  SMB0CN0_STO = 1;
-                  SMB0CN0_STA = 1;
-                  SMB0CN0_ACK = 1;
-                  Read_Init = 1;
-                  break;
-                }
-              else if (SMB0CN0_ACK == 0)                     // If slave NACK,
-                {
-                  SMB0CN0_STO = 1;                // Send STOP condition, followed
-                  SMB0CN0_STA = 1;// By a START
-                  NUM_ERRORS++;// Indicate error
-                }
+                else
+                  {
+                    SMB0DAT = MEMA_read;
+                    MEMA_sent = 1;
+                  }
+                break;
+              }
+            else if (SMB_RW == WRITE && MEMA_sent) // If this transfer is a WRITE, and memory address has been sent
+              {
+                if (sent_byte_counter <= NUM_BYTES_WR)
+                  {
+                    // send data byte
+                    SMB0DAT = SMB_DATA_OUT[sent_byte_counter-1];
+                    sent_byte_counter++;
+                  }
+                else
+                  {
+                    SMB0CN0_STO = 1; // Set SMB0CN0_STO to terminate transfer
+                    SMB_BUSY = 0;// And free SMBus interface
+                  }
+              }
+            else if (SMB_RW == 1 && MEMA_sent && Read_Init == 0) // If transfer is read, initiate STOP, then START, then first 7 bits of SA
+            // then proceed to receive mode
+              {
+                SMB0CN0_STO = 1;
+                SMB0CN0_STA = 1;
+                SMB0CN0_ACK = 1;
+                Read_Init = 1;
+                break;
+              }
+            else if (SMB0CN0_ACK == 0)                     // If slave NACK,
+              {
+                SMB0CN0_STO = 1;                // Send STOP condition, followed
+                SMB0CN0_STA = 1;// By a START
+                NUM_ERRORS++;// Indicate error
+              }
             break;
 
             // Master Receiver: byte received
@@ -181,37 +193,50 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
 //-----------------------------------------------------------------------------
 SI_INTERRUPT(TIMER3_ISR, TIMER3_IRQn)
   {
-  uint8_t set_biphasic = 0;
-  Polarity(0); // start shunted
+    uint8_t set_biphasic = 0;
+    Polarity(0); // start shunted
 //  TMR2CN0 |= TMR2CN0_TR2__RUN; // Start Timer 2 for pulse width timing
-          Polarity(1);   // Forward polarity
-          Pulse_On();
-          sampleADC();
-          T0_Waitus(1);
-           // (-) phase for next 50 us
-          Pulse_Off();
-         // P05 = 0;
-          Polarity(0);   // Shunted
-          Polarity(2);  // Reverse
-          Pulse_On();
-          sampleADC();
-         // P05 = 1;
-          T0_Waitus(1);
-          // 100 us passed, stop stimulation
-          Polarity(0);   // Shunted
-          Pulse_Off();
+    Polarity(1);// Forward polarity
+    Pulse_On();
+    sampleADC();
+    T0_Waitus(1);
+    // (-) phase for next 50 us
+    Pulse_Off();
+    // P05 = 0;
+    Polarity(0);// Shunted
+    Polarity(2);// Reverse
+    Pulse_On();
+    sampleADC();
+    // P05 = 1;
+    T0_Waitus(1);
+    // 100 us passed, stop stimulation
+    Polarity(0);// Shunted
+    Pulse_Off();
 
 //  TMR2CN0 |= TMR2CN0_TR2__STOP;
-  TMR3CN0 &= ~0x80;// Clear Timer3 interrupt-pending flag
-}
-
+    TMR3CN0 &= ~0x80;// Clear Timer3 interrupt-pending flag
+  }
 
 SI_INTERRUPT(TIMER2_ISR, TIMER2_IRQn)
-{
-  TMR2CN0_TF2H = 0;                              // clear Timer2 interrupt flag
+  {
+    TMR2CN0_TF2H = 0;                             // clear Timer2 interrupt flag
 //  i_50us++;
 //  if(i_50us>2){
 //      i_50us = 0;
 //  }
 
-}
+  }
+//-----------------------------------------------------------------------------
+// ADC0EOC_ISR
+//-----------------------------------------------------------------------------
+//
+// ADC0EOC ISR Content goes here. Remember to clear flag bits:
+// ADC0CN0::ADINT (Conversion Complete Interrupt Flag)
+//
+//-----------------------------------------------------------------------------
+SI_INTERRUPT (ADC0EOC_ISR, ADC0EOC_IRQn)
+  {
+  ADC0_clearIntFlags(ADC0_CONVERSION_COMPLETE_IF);
+  ADC_CONVERSION_COMPLETE = true;
+  }
+
