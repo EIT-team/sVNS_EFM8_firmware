@@ -28,7 +28,9 @@ extern void sampleADC(void);
 static uint8_t MEMA_read = 0x01;
 static uint8_t MEMA_write = 0x02;
 bool SA_sent = 0;
+bool SA_read_sent = 0;
 bool MEMA_sent = 0;
+bool Read_Init = 0;
 
 //-----------------------------------------------------------------------------
 // SMBUS0_ISR
@@ -57,8 +59,14 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
             SMB0DAT = TARGET;// Load address of the target slave
             SMB0DAT &= 0xFE;// Clear the LSB of the address for the
             // R/W bit
-            SMB0DAT |= (uint8_t) 0;// Load R/W bit
+            if (Read_Init) { // Prepare the read mode
+                SMB0DAT |= (uint8_t) 1;// set 1 as per NT3H manual for DATA IN receive
+                SMB0CN0_STA = 0;// Manually clear START bit
+            }
+            else {
+            SMB0DAT |= (uint8_t) 0;// set 0 as per NT3H manual
             SMB0CN0_STA = 0;// Manually clear START bit
+            }
             rec_byte_counter = 1;// Reset the counter
             sent_byte_counter = 1;// Reset the counter
             SA_sent = 1;
@@ -66,9 +74,20 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
 
             // Master Transmitter: Data byte transmitted
             case SMB_MTDB:
-            if (SMB0CN0_ACK && SA_sent && MEMA_sent)// Slave SMB0CN0_ACK?
+//            if (SMB0CN0_ACK && SA_sent && MEMA_sent)// Slave SMB0CN0_ACK?
+              if (SMB0CN0_ACK && SA_sent && MEMA_sent == 0)
               {
-                if (SMB_RW == WRITE)    // If this transfer is a WRITE,
+                  if (SMB_RW == WRITE) {
+                      SMB0DAT = MEMA_write;
+                      MEMA_sent = 1;
+                  }
+                  else {
+                      SMB0DAT = MEMA_read;
+                      MEMA_sent = 1;
+                  }
+                  break;
+              }
+              else if (SMB_RW == WRITE && MEMA_sent)    // If this transfer is a WRITE, and memory address has been sent
                   {
                     if (sent_byte_counter <= NUM_BYTES_WR)
                       {
@@ -82,30 +101,21 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
                         SMB_BUSY = 0;// And free SMBus interface
                       }
                   }
-                else
-                  {}                 // If this transfer is a READ,
-                // proceed with transfer without
-                // writing to SMB0DAT (switch
-                // to receive mode)
-
-              }
-            else if (SMB0CN0_ACK && SA_sent) {
-                if (SMB_RW == WRITE) {
-                    SMB0DAT = MEMA_write;
-                    MEMA_sent = 1;
+              else if (SMB_RW == 1 && MEMA_sent && Read_Init == 0) // If transfer is read, initiate STOP, then START, then first 7 bits of SA
+                   // then proceed to receive mode
+                {
+                  SMB0CN0_STO = 1;
+                  SMB0CN0_STA = 1;
+                  SMB0CN0_ACK = 1;
+                  Read_Init = 1;
+                  break;
                 }
-                else {
-                    SMB0DAT = MEMA_read;
-                    MEMA_sent = 1;
+              else if (SMB0CN0_ACK == 0)                     // If slave NACK,
+                {
+                  SMB0CN0_STO = 1;                // Send STOP condition, followed
+                  SMB0CN0_STA = 1;// By a START
+                  NUM_ERRORS++;// Indicate error
                 }
-
-            }
-            else                       // If slave NACK,
-              {
-                SMB0CN0_STO = 1;                // Send STOP condition, followed
-                SMB0CN0_STA = 1;// By a START
-                NUM_ERRORS++;// Indicate error
-              }
             break;
 
             // Master Receiver: byte received
@@ -153,11 +163,10 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
         SMB_BUSY = 0;// Free SMBus
 
         FAIL = 0;
-        LED0 = 0;
+//       LED0 = 0;
 
         NUM_ERRORS++;// Indicate an error occurred
       }
-
     SMB0CN0_SI = 0;                             // Clear interrupt flag
   }
 
