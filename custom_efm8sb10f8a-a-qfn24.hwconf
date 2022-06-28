@@ -21,7 +21,6 @@
     <property object="INTERRUPT_0" propertyId="interrupt.extendedinterruptpriority1.smbussmb0prioritycontrolinterrupt" value="High priority"/>
     <property object="INTERRUPT_0" propertyId="interrupt.extendedinterruptpriority1.timer3prioritycontrolinterrupt" value="High priority"/>
     <property object="INTERRUPT_0" propertyId="interrupt.interruptenable.enableallinterrupts" value="Enabled"/>
-    <property object="INTERRUPT_0" propertyId="interrupt.interruptenable.enabletimer2interrupt" value="Enabled"/>
     <property object="IREF_0" propertyId="ABPeripheral.included" value="true"/>
     <property object="IREF_0" propertyId="iref.currentreferencecontrol.outputcurrent" value="0 uA"/>
     <property object="P0.2" propertyId="ports.settings.iomode" value="Digital Push-Pull Output"/>

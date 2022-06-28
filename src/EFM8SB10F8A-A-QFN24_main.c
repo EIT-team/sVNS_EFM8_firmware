@@ -142,9 +142,9 @@ main (void)
 
   // SMBus comms
   // Read data from NT3H
-//  SMB_DATA_OUT[0] = 5;      // NT3H Address to Read
-//  TARGET = SLAVE_ADDR;         // I2C slave address for NT3H is 0xAA
-//  SMB_Write();                 // Write sequence with the MEMA as per NT3H data sheet
+  SMB_DATA_OUT[0] = 0xDD;      // NT3H Address to Read
+  TARGET = SLAVE_ADDR;         // I2C slave address for NT3H is 0xAA
+  SMB_Write();                 // Write sequence with the MEMA as per NT3H data sheet
   TARGET = SLAVE_ADDR;
   SMB_Read();                  // Read MEMA address
   // I2C data save
