@@ -61,8 +61,8 @@ void RTC_Fhz_set (uint16_t);
 // P0.0 - SMBus SDA
 // P0.1 - SMBus SCL
 #define MEMA  0x01 // NT3H memory address
-uint8_t SMB_DATA_OUT[NUM_BYTES_WR];
-uint8_t SMB_DATA_IN[NUM_BYTES_RD];
+uint8_t SMB_DATA_OUT[NUM_BYTES_WR] = {0};
+uint8_t SMB_DATA_IN[NUM_BYTES_RD] = {0};
 uint8_t SAVE[16];
 uint8_t TARGET;                             // Target SMBus slave address
 volatile bool SMB_BUSY;
@@ -132,6 +132,7 @@ main (void)
   // Initialize normal operation
   enter_DefaultMode_from_smbus_reset ();
   // Initialize RTC and power management.
+  //SMB_Read();
   RTC0CN0_Local = 0xC0;                // Initialize Local Copy of RTC0CN0
   RTC0CN0_SetBits(RTC0TR+RTC0AEN+ALRM);// Enable Counter, Alarm, and Auto-Reset
 
@@ -142,7 +143,7 @@ main (void)
 
   // SMBus comms
   // Read data from NT3H
-  SMB_DATA_OUT[0] = 0xDD;      // NT3H Address to Read
+  SMB_DATA_OUT[0] = 0x4C;      // NT3H Address to Read
   TARGET = SLAVE_ADDR;         // I2C slave address for NT3H is 0xAA
   SMB_Write();                 // Write sequence with the MEMA as per NT3H data sheet
   TARGET = SLAVE_ADDR;
@@ -267,11 +268,12 @@ void Biphasic_pulm(void){
           }
       // Stimulation state. Stay awake.
       if (isStim) {
-          // Wait for next alarm or clock failure, then clear flags
-          // Initiate interrupts
+
+
 
         MUX36S16_output(mux36s16_state);
-        while((PMU0CF & RTCAWK) == 0);
+        while((PMU0CF & RTCAWK) == 0); // Wait for next alarm or clock failure, then clear flags
+        // Initiate interrupts. Interrupts in process until the next RTC alarm
         if(PMU0CF & RTCAWK) RTC_Alarm = 1;
         if(PMU0CF & RTCFWK) RTC_Failure = 1;
         PMU0CF = 0x20;
@@ -309,7 +311,16 @@ void SDA_Reset(void)
 
 void SMB_Write (void)
 {
-   while (SMB_BUSY);                   // Wait for SMBus to be free.
+  SMB0CF &= ~0x80;                 // Reset communication
+  SMB0CF |= SMB0CN0_MASTER__MASTER;
+  SMB0CN0_MASTER = 0x1;                 // Force SMB0 into Master mode (preventing error)
+  SMB0CN0_TXMODE = 0x1;                 // Force to transmit
+  SMB0CN0_STA = 0;
+  SMB0CN0_STO = 0;
+  SMB0CN0_ACK = 0;
+  SMB_BUSY = 0;// Free SMBus
+
+  while (SMB_BUSY);                   // Wait for SMBus to be free.
    SMB_BUSY = 1;                       // Claim SMBus (set to busy)
    SMB_RW = 0;                         // Mark this transfer as a WRITE
    SMB0CN0_STA = 1;                            // Start transfer
@@ -319,7 +330,16 @@ void SMB_Write (void)
 
 void SMB_Read (void)
 {
-   while (SMB_BUSY);               // Wait for bus to be free.
+  SMB0CF &= ~0x80;                 // Reset communication
+  SMB0CF |= SMB0CN0_MASTER__MASTER;
+  SMB0CN0_MASTER = 0x1;           // Force SMB0 into Master mode (preventing error)
+  SMB0CN0_TXMODE = 0x1;           // Force to transmit
+  SMB0CN0_STA = 0;
+  SMB0CN0_STO = 0;
+  SMB0CN0_ACK = 0;
+  SMB_BUSY = 0;// Free SMBus
+
+  while (SMB_BUSY);               // Wait for bus to be free.
    SMB_BUSY = 1;                       // Claim SMBus (set to busy)
    SMB_RW = 1;                         // Mark this transfer as a READ
    SMB0CN0_STA = 1;                            // Start transfer
@@ -458,7 +478,7 @@ void sampleADC(void)
   mV = ADC0_convertSampleToMillivolts(ADC0_getResult());
   mV1 = getByte(mV,0);
   mV2 = getByte(mV,1);
-  SMB_DATA_OUT[0] = 0x0A;
+  SMB_DATA_OUT[0] = 0x00;
   SMB_DATA_OUT[1] = mV1;
   SMB_DATA_OUT[2] = mV2;
   TARGET = SLAVE_ADDR;         // I2C slave address for NT3H is 0xAA

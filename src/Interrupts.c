@@ -34,8 +34,8 @@ bool ADC_CONVERSION_COMPLETE = false;
 extern void
 sampleADC (void);
 // NT3H I2C parameters
-static uint8_t MEMA_read = 0x01;
-static uint8_t MEMA_write = 0x02;
+#define MEMA_read  0x01     // Memory address to read
+#define MEMA_write  0x02    // Memory address to write
 bool SA_sent = 0;
 bool SA_read_sent = 0;
 bool MEMA_sent = 0;
@@ -67,10 +67,11 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
             SMB0DAT = TARGET;// Load address of the target slave
             SMB0DAT &= 0xFE;// Clear the LSB of the address for the
             // R/W bit
-            if (Read_Init)
+            if (SMB_RW == READ && Read_Init)
               { // Prepare the read mode
                 SMB0DAT |= (uint8_t) 1;// set 1 as per NT3H manual for DATA IN receive
                 SMB0CN0_STA = 0;// Manually clear START bit
+                SA_read_sent = 1;
               }
             else
               {
@@ -96,10 +97,11 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
                   {
                     SMB0DAT = MEMA_read;
                     MEMA_sent = 1;
+                    Read_Init = 0;
                   }
                 break;
               }
-            else if (SMB_RW == WRITE && MEMA_sent) // If this transfer is a WRITE, and memory address has been sent
+            else if (SMB0CN0_ACK && SMB_RW == WRITE && MEMA_sent) // If this transfer is a WRITE, and memory address has been sent
               {
                 if (sent_byte_counter <= NUM_BYTES_WR)
                   {
@@ -107,20 +109,21 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
                     SMB0DAT = SMB_DATA_OUT[sent_byte_counter-1];
                     sent_byte_counter++;
                   }
-                else
+                else // End of writing
                   {
                     SMB0CN0_STO = 1; // Set SMB0CN0_STO to terminate transfer
                     SMB_BUSY = 0;// And free SMBus interface
+                    MEMA_sent = 0;
+                    SA_sent = 0;
                   }
               }
-            else if (SMB_RW == 1 && MEMA_sent && Read_Init == 0) // If transfer is read, initiate STOP, then START, then first 7 bits of SA
+            else if (SMB0CN0_ACK && SMB_RW == READ && MEMA_sent && Read_Init == 0) // If transfer is read, initiate STOP, then START, then first 7 bits of SA
             // then proceed to receive mode
               {
                 SMB0CN0_STO = 1;
-                SMB0CN0_STA = 1;
                 SMB0CN0_ACK = 1;
                 Read_Init = 1;
-                break;
+                SMB0CN0_STA = 1;
               }
             else if (SMB0CN0_ACK == 0)                     // If slave NACK,
               {
@@ -139,15 +142,20 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
                 SMB0CN0_ACK = 1;// Send SMB0CN0_ACK to indicate byte received
                 rec_byte_counter++;// Increment the byte counter
               }
-            else
+            else // End of reading
               {
                 SMB_DATA_IN[rec_byte_counter-1] = SMB0DAT; // Store received
                 // byte
                 SMB_BUSY = 0;// Free SMBus interface
-                SMB0CN0_ACK = 0;// Send NACK to indicate last byte
+                //SMB0CN0_ACK = 0;// Send NACK to indicate last byte
                 // of this transfer
+                SMB0CN0_ACK = 1;// Send SMB0CN0_ACK to indicate byte received
 
                 SMB0CN0_STO = 1;// Send STOP to terminate transfer
+                MEMA_sent = 0;
+                SA_sent = 0;
+                Read_Init = 0;
+                SA_read_sent = 0;
               }
             break;
 
@@ -198,17 +206,17 @@ SI_INTERRUPT(TIMER3_ISR, TIMER3_IRQn)
 //  TMR2CN0 |= TMR2CN0_TR2__RUN; // Start Timer 2 for pulse width timing
     Polarity(1);// Forward polarity
     Pulse_On();
-    //sampleADC();
     T0_Waitus(1);
+    sampleADC();
     // (-) phase for next 50 us
     Pulse_Off();
     // P05 = 0;
     Polarity(0);// Shunted
     Polarity(2);// Reverse
     Pulse_On();
-    sampleADC();
     // P05 = 1;
     T0_Waitus(1);
+    sampleADC();
     // 100 us passed, stop stimulation
     Polarity(0);// Shunted
     Pulse_Off();
