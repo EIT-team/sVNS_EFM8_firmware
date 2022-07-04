@@ -207,7 +207,7 @@ SI_INTERRUPT(TIMER3_ISR, TIMER3_IRQn)
     Polarity(1);// Forward polarity
     Pulse_On();
     T0_Waitus(1);
-    sampleADC();
+    //sampleADC();
     // (-) phase for next 50 us
     Pulse_Off();
     // P05 = 0;

@@ -132,7 +132,6 @@ main (void)
   // Initialize normal operation
   enter_DefaultMode_from_smbus_reset ();
   // Initialize RTC and power management.
-  //SMB_Read();
   RTC0CN0_Local = 0xC0;                // Initialize Local Copy of RTC0CN0
   RTC0CN0_SetBits(RTC0TR+RTC0AEN+ALRM);// Enable Counter, Alarm, and Auto-Reset
 
@@ -140,12 +139,14 @@ main (void)
   LPM_Enable_Wakeup(RTC);
 
   RTC_Alarm = 1;                      // Set the RTC Alarm Flag on startup
+//  Test comms:
+//  SMB_DATA_OUT[8] = 0x3F;
+//  TARGET = SLAVE_ADDR;         // I2C slave address for NT3H is 0xAA
+//  SMB_Write();                 // Write sequence with the MEMA as per NT3H data sheet
+//  T0_Waitus(100);
 
   // SMBus comms
   // Read data from NT3H
-  SMB_DATA_OUT[0] = 0x4C;      // NT3H Address to Read
-  TARGET = SLAVE_ADDR;         // I2C slave address for NT3H is 0xAA
-  SMB_Write();                 // Write sequence with the MEMA as per NT3H data sheet
   TARGET = SLAVE_ADDR;
   SMB_Read();                  // Read MEMA address
   // I2C data save
@@ -311,14 +312,14 @@ void SDA_Reset(void)
 
 void SMB_Write (void)
 {
-  SMB0CF &= ~0x80;                 // Reset communication
-  SMB0CF |= SMB0CN0_MASTER__MASTER;
-  SMB0CN0_MASTER = 0x1;                 // Force SMB0 into Master mode (preventing error)
-  SMB0CN0_TXMODE = 0x1;                 // Force to transmit
-  SMB0CN0_STA = 0;
-  SMB0CN0_STO = 0;
-  SMB0CN0_ACK = 0;
-  SMB_BUSY = 0;// Free SMBus
+//  SMB0CF &= ~0x80;                 // Reset communication
+//  SMB0CF |= SMB0CN0_MASTER__MASTER;
+//  SMB0CN0_MASTER = 0x1;                 // Force SMB0 into Master mode (preventing error)
+//  SMB0CN0_TXMODE = 0x1;                 // Force to transmit
+//  SMB0CN0_STA = 0;
+//  SMB0CN0_STO = 0;
+//  SMB0CN0_ACK = 0;
+//  SMB_BUSY = 0;// Free SMBus
 
   while (SMB_BUSY);                   // Wait for SMBus to be free.
    SMB_BUSY = 1;                       // Claim SMBus (set to busy)
@@ -330,14 +331,14 @@ void SMB_Write (void)
 
 void SMB_Read (void)
 {
-  SMB0CF &= ~0x80;                 // Reset communication
-  SMB0CF |= SMB0CN0_MASTER__MASTER;
-  SMB0CN0_MASTER = 0x1;           // Force SMB0 into Master mode (preventing error)
-  SMB0CN0_TXMODE = 0x1;           // Force to transmit
-  SMB0CN0_STA = 0;
-  SMB0CN0_STO = 0;
-  SMB0CN0_ACK = 0;
-  SMB_BUSY = 0;// Free SMBus
+//  SMB0CF &= ~0x80;                 // Reset communication
+//  SMB0CF |= SMB0CN0_MASTER__MASTER;
+//  SMB0CN0_MASTER = 0x1;           // Force SMB0 into Master mode (preventing error)
+//  SMB0CN0_TXMODE = 0x1;           // Force to transmit
+//  SMB0CN0_STA = 0;
+//  SMB0CN0_STO = 0;
+//  SMB0CN0_ACK = 0;
+//  SMB_BUSY = 0;// Free SMBus
 
   while (SMB_BUSY);               // Wait for bus to be free.
    SMB_BUSY = 1;                       // Claim SMBus (set to busy)
