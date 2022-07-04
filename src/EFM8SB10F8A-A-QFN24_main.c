@@ -312,15 +312,6 @@ void SDA_Reset(void)
 
 void SMB_Write (void)
 {
-//  SMB0CF &= ~0x80;                 // Reset communication
-//  SMB0CF |= SMB0CN0_MASTER__MASTER;
-//  SMB0CN0_MASTER = 0x1;                 // Force SMB0 into Master mode (preventing error)
-//  SMB0CN0_TXMODE = 0x1;                 // Force to transmit
-//  SMB0CN0_STA = 0;
-//  SMB0CN0_STO = 0;
-//  SMB0CN0_ACK = 0;
-//  SMB_BUSY = 0;// Free SMBus
-
   while (SMB_BUSY);                   // Wait for SMBus to be free.
    SMB_BUSY = 1;                       // Claim SMBus (set to busy)
    SMB_RW = 0;                         // Mark this transfer as a WRITE
@@ -331,15 +322,6 @@ void SMB_Write (void)
 
 void SMB_Read (void)
 {
-//  SMB0CF &= ~0x80;                 // Reset communication
-//  SMB0CF |= SMB0CN0_MASTER__MASTER;
-//  SMB0CN0_MASTER = 0x1;           // Force SMB0 into Master mode (preventing error)
-//  SMB0CN0_TXMODE = 0x1;           // Force to transmit
-//  SMB0CN0_STA = 0;
-//  SMB0CN0_STO = 0;
-//  SMB0CN0_ACK = 0;
-//  SMB_BUSY = 0;// Free SMBus
-
   while (SMB_BUSY);               // Wait for bus to be free.
    SMB_BUSY = 1;                       // Claim SMBus (set to busy)
    SMB_RW = 1;                         // Mark this transfer as a READ

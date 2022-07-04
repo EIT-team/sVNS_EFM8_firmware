@@ -1010,10 +1010,10 @@ INTERRUPT_0_enter_DefaultMode_from_smbus_reset (void)
    - PCA0 interrupt set to low priority level
    - RTC Alarm interrupt set to low priority level
    - SMB0 interrupt set to high priority level
-   - Timer 3 interrupts set to high priority level
+   - Timer 3 interrupts set to low priority level
    ***********************************************************************/
   EIP1 = EIP1_PADC0__LOW | EIP1_PWADC0__LOW | EIP1_PCP0__LOW | EIP1_PPCA0__LOW
-      | EIP1_PRTC0A__LOW | EIP1_PSMB0__HIGH | EIP1_PT3__HIGH;
+      | EIP1_PRTC0A__LOW | EIP1_PSMB0__HIGH | EIP1_PT3__LOW;
   // [EIP1 - Extended Interrupt Priority 1]$
 
   // $[IE - Interrupt Enable]
