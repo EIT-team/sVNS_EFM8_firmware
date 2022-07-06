@@ -24,30 +24,28 @@
 // Application-component specific constants and variables
 //-----------------------------------------------------------------------------
 
-// Stimulation
+// Stimulation parameters
 // P0.7 - IREF
-uint8_t T_on_HB;
-uint8_t T_on_LB;
-uint8_t T_on;
-uint8_t F_hz_HB;
-uint8_t F_hz_LB;
-uint8_t F_hz;
-uint8_t Iset;
-bool stimDelivering;
-bool isStim = 0;
-uint8_t set = 1;
-uint8_t j;
-float cycles;
-float half_T_on;
+// Read from NFC:
+uint8_t PW_HB;          // Pulse width high byte, chunks of 50 us, where 1 = 50 us, 2 = 100 us, 3 = 150 us
+uint8_t PW_LB;          // Pulse width low byte
+uint16_t PW;            // Pulse width 16-bit word
+uint8_t F_hz_HB;        // Pulse frequency high byte, Hz
+uint8_t F_hz_LB;        // Pulse frequency low byte, Hz
+uint16_t F_hz;          // Pulse frequency 16-bit word, Hz
+uint8_t Iset;           // Set IREF current reference value, 0-63 (decimal) / 0 - 3F (hex)
+uint8_t T_on;           // Stimulation time on and off, seconds
+bool On;                // Voltage converter and 20V plane switch -> Switches stimulation circuit
+// uint8_t Protocol;       // Protocol type, 0 - Biphasic pulmonary, 1 - Biphasic laryngeal, 2 - Biphasic general uninterrupted, 3 - Monophasic
+// Used in workflow:
+bool isStim = 0;        // Stimulation on/off status for the sleep mode initiation
 
 // Stimulation function prototypes
 void Polarity(uint8_t);
 void T0_Waitus (uint8_t);
 void Pulse_On(void);
 void Pulse_Off(void);
-//void Monophasic(void);
-void Biphasic(void);
-void Biphasic_pulm(void);
+void Biphasic_protocol(void);
 uint8_t getByte (uint16_t, uint8_t);
 void RTC_Fhz_set (uint16_t);
 
@@ -55,13 +53,14 @@ void RTC_Fhz_set (uint16_t);
 // I2C
 // P0.0 - SMBus SDA
 // P0.1 - SMBus SCL
-#define MEMA  0x01 // NT3H memory address
-uint8_t SMB_DATA_OUT[NUM_BYTES_WR] = {0};
-uint8_t SMB_DATA_IN[NUM_BYTES_RD] = {0};
-uint8_t SAVE[16];
-uint8_t TARGET;                             // Target SMBus slave address
-volatile bool SMB_BUSY;
-volatile bool SMB_RW;
+uint8_t j;                                  // Counter variable
+uint8_t SMB_DATA_OUT[NUM_BYTES_WR] = {0};   // Initialize I2C Write buffer, fill with 0
+uint8_t SMB_DATA_IN[NUM_BYTES_RD] = {0};    // Initialize I2C Read buffer, fill with 0
+uint8_t SAVE[16];                           // Saved Read array
+uint8_t TARGET;
+//define TARGET SLAVE_ADDR                   // Target SMBus slave address
+volatile bool SMB_BUSY;                     // SMB status bit
+volatile bool SMB_RW;                       // SMB status bit
 uint16_t NUM_ERRORS;
 SI_SBIT (SDA, SFR_P0, 0);                   // SMBus on P0.0
 SI_SBIT (SCL, SFR_P0, 1);                   // and P0.1
@@ -72,14 +71,14 @@ void SMB_Read (void);
 void SDA_Reset(void);
 
 // LT8410, MUX36 shutdown pin
-SI_SBIT (P05, SFR_P0, 5);                   // Pin 0.5 for SHDN enable/disable
+SI_SBIT (P05, SFR_P0, 5);                   // Pin 0.5 for SHDN (20V stage) enable/disable
 
 // MUX36S16 - H-bridge multiplexer, pins 1.4 - 1.7
 SI_SBIT (P17, SFR_P1, 7);                   // Pin 1.7 for MUX36S16 A0
 SI_SBIT (P16, SFR_P1, 6);                   // Pin 1.6 for MUX36S16 A1
 SI_SBIT (P15, SFR_P1, 5);                   // Pin 1.5 for MUX36S16 A2
 SI_SBIT (P14, SFR_P1, 4);                   // Pin 1.4 for MUX36S16 A3
-uint8_t mux36s16_state = 0;                     // MUX36S16 state byte
+uint8_t mux36s16_state = 0;                 // MUX36S16 state byte
 // MUX36S16 state function
 void MUX36S16_output(uint8_t);
 
@@ -93,9 +92,9 @@ void MUX36D08_output(uint8_t);
 
 // ADC
 void sampleADC(void);
-#define VREF_MV         (1650UL)
-#define ADC_MAX_RESULT  ((1 << 10)-1) // 10 bit ADC
-uint16_t ADC0_convertSampleToMillivolts(uint16_t);
+#define VREF_MV         (1650UL)      // Configured voltage reference, 1.65 V for the ADC
+#define ADC_MAX_RESULT  ((1 << 10)-1) // ADC resolution, 10 bit ADC
+uint16_t ADC0_convertSampleToMillivolts(uint16_t); // ADC sample conversion to mV
 
 //-----------------------------------------------------------------------------
 // SiLabs_Startup() Routine
@@ -118,7 +117,7 @@ SiLabs_Startup (void)
 void
 main (void)
 {
-  T0_Waitus(1);
+  T0_Waitus(1);                     // Wait 50 us for stability
   // SMBus reset
   enter_smbus_reset_from_RESET ();
   while(!SDA){
@@ -134,11 +133,6 @@ main (void)
   LPM_Enable_Wakeup(RTC);
 
   RTC_Alarm = 1;                      // Set the RTC Alarm Flag on startup
-//  Test comms:
-//  SMB_DATA_OUT[8] = 0x3F;
-//  TARGET = SLAVE_ADDR;         // I2C slave address for NT3H is 0xAA
-//  SMB_Write();                 // Write sequence with the MEMA as per NT3H data sheet
-//  T0_Waitus(100);
 
   // SMBus comms
   // Read data from NT3H
@@ -146,28 +140,26 @@ main (void)
   SMB_Read();                  // Read MEMA address
   // I2C data save
   for(j=0; j<16; j++){
-      SAVE[j] = SMB_DATA_IN[j];   // Save read data
+      SAVE[j] = SMB_DATA_IN[j];   // Save read buffer into array
   }
-  T_on_HB = SAVE[0]; // Pulse Width in chunks of 50 us high byte
-  T_on_LB = SAVE[1]; // Pulse Width in chunks of 50 us low byte
+  PW_HB = SAVE[0]; // Pulse Width in chunks of 50 us high byte
+  PW_LB = SAVE[1]; // Pulse Width in chunks of 50 us low byte
   F_hz_HB = SAVE[2]; // Pulse frequency high byte
   F_hz_LB = SAVE[3]; // Pulse frequency low byte
-  T_on = (T_on_HB<<8)|(T_on_LB); // Combine PW into single hex
+  T_on = SAVE[4];    // Stimulation protcol time on/off
+  On = SAVE[5];
+  PW = (PW_HB<<8)|(PW_LB); // Combine PW into single hex
   F_hz = (F_hz_HB<<8)|(F_hz_LB); // Combine IPW into single hex
-  // mux36d08_state = SAVE[4]; // save MUX36 switch state
-  Iset = SAVE[8];
+  Iset = SAVE[8];     // IREF current value
 
-//  cycles = 20000 / F_hz; // number of cycles for 50 us/20 kHz timer for a given pulse frequency
-
-  P05 = 1;              // Enable LT8410, enable MUX36D08 and 2x MUX36S16
-//  half_T_on = (float) T_on / 2.0;
+  P05 = On;              // Enable or disable LT8410, enable MUX36D08 and 2x MUX36S16
   TMR3CN0 |= TMR3CN0_TR3__RUN; // start timer 3 for stimulation
   while(1){
-      Biphasic_pulm();
+      Biphasic_protocol();
   };
 }
 
-// Function declarations
+// Function definitions
 
 void Polarity(char polar) {
   switch (polar) {
@@ -199,14 +191,11 @@ void Pulse_Off(void){
                             | (0x00 << IREF0CN0_IREF0DAT__SHIFT); // Current 0 mA
 }
 
-/* Function: Biphasic
+/* Function: T0_Waitus
  * --------------------
- * Uninterrupted Biphasic stimulation with set parameters
+ * Wait function based on timer 0 overflow.
+ * Overflows every 50 us. Does not generate interrupt.
  */
-void Biphasic(void){
-  // handle T_on division by 2 in integers
-  }
-
 void T0_Waitus (uint8_t us)
 {
    TCON &= ~0x30;                      // Stop Timer0; Clear TCON_TF0
@@ -231,15 +220,12 @@ void T0_Waitus (uint8_t us)
    TCON_TR0 = 0;                            // Stop Timer0
 }
 
-// Function: Biphasic_pulm
+// Function: Biphasic_protocol
 // * --------------------
-// * Biphasic stimulation with the pulmonary protocol
+// * Biphasic stimulation with the pulmonary/laryngeal protocol
 //
-void Biphasic_pulm(void){
-  // start shunted
-  Polarity(0);
+void Biphasic_protocol(void){
   MUX36S16_output(0);
-  //RTC_Fhz_set(20);
   while(1){
       // Handle RTC failure
       if(RTC_Failure)
