@@ -9,13 +9,7 @@
 // USER INCLUDES
 #include <SI_EFM8SB1_Register_Enums.h>
 #include "EFM8SB1_SMBus_Master_Multibyte.h"
-//volatile uint16_t i_50us = 0;
-//volatile uint8_t i_50us = 0;
-//volatile float timer2 = 0;
-// extern volatile uint8_t isstim;
-//extern float cycles;
-// extern float cycles_large;
-//extern float half_T_on;
+#include "adc_0.h"
 
 extern void
 Polarity (uint8_t);
@@ -25,11 +19,13 @@ extern void
 Pulse_Off (void);
 extern void
 T0_Waitus (uint8_t); // waits 50 us
+extern uint16_t PW;
+
 // ADC
-#include "adc_0.h"
 bool ADC_CONVERSION_COMPLETE = false;
 extern void
 sampleADC (void);
+
 // NT3H I2C parameters
 #define MEMA_read  0x01     // Memory address to read
 #define MEMA_write  0x02    // Memory address to write
@@ -201,14 +197,14 @@ SI_INTERRUPT(TIMER3_ISR, TIMER3_IRQn)
     Polarity(0); // start shunted
     Polarity(1);// Forward polarity
     Pulse_On();
-    T0_Waitus(1);
+    T0_Waitus(PW);
     // (-) phase for next 50 us
     Pulse_Off();
     // Shunt and reverse
     Polarity(0);// Shunted
     Polarity(2);// Reverse
     Pulse_On();
-    T0_Waitus(1);
+    T0_Waitus(PW);
     // (+) phase for next 50 us
     // 100 us passed, stop stimulation
     Polarity(0);// Shunted

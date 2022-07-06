@@ -43,6 +43,7 @@ bool isStim = 0;        // Stimulation on/off status for the sleep mode initiati
 // Stimulation function prototypes
 void Polarity(uint8_t);
 void T0_Waitus (uint8_t);
+void T3_init(uint8_t, uint8_t);
 void Pulse_On(void);
 void Pulse_Off(void);
 void Biphasic_protocol(void);
@@ -57,8 +58,8 @@ uint8_t j;                                  // Counter variable
 uint8_t SMB_DATA_OUT[NUM_BYTES_WR] = {0};   // Initialize I2C Write buffer, fill with 0
 uint8_t SMB_DATA_IN[NUM_BYTES_RD] = {0};    // Initialize I2C Read buffer, fill with 0
 uint8_t SAVE[16];                           // Saved Read array
-uint8_t TARGET;
-//define TARGET SLAVE_ADDR                   // Target SMBus slave address
+uint8_t TARGET;                             // Target SMBus slave address
+//define TARGET SLAVE_ADDR
 volatile bool SMB_BUSY;                     // SMB status bit
 volatile bool SMB_RW;                       // SMB status bit
 uint16_t NUM_ERRORS;
@@ -118,27 +119,25 @@ void
 main (void)
 {
   T0_Waitus(1);                     // Wait 50 us for stability
-  // SMBus reset
+  // SMBus reset mode in case of I2C comms SDA fault
   enter_smbus_reset_from_RESET ();
   while(!SDA){
       SDA_Reset();
   }
+
   // Initialize normal operation
   enter_DefaultMode_from_smbus_reset ();
+
   // Initialize RTC and power management.
   RTC0CN0_Local = 0xC0;                // Initialize Local Copy of RTC0CN0
   RTC0CN0_SetBits(RTC0TR+RTC0AEN+ALRM);// Enable Counter, Alarm, and Auto-Reset
-
   LPM_Init();                         // Initialize Power Management
-  LPM_Enable_Wakeup(RTC);
-
+  LPM_Enable_Wakeup(RTC);             // RTC alarm as the Wake Up source
   RTC_Alarm = 1;                      // Set the RTC Alarm Flag on startup
 
-  // SMBus comms
-  // Read data from NT3H
-  TARGET = SLAVE_ADDR;
-  SMB_Read();                  // Read MEMA address
-  // I2C data save
+  // Read data-stimulation parameters from NT3H via I2C
+  TARGET = SLAVE_ADDR;         // NT3H slave address, 0xAA for NT3H
+  SMB_Read();                  // Read first 16 bytes from the memory 0x01 into READ buffer
   for(j=0; j<16; j++){
       SAVE[j] = SMB_DATA_IN[j];   // Save read buffer into array
   }
@@ -150,9 +149,14 @@ main (void)
   On = SAVE[5];
   PW = (PW_HB<<8)|(PW_LB); // Combine PW into single hex
   F_hz = (F_hz_HB<<8)|(F_hz_LB); // Combine IPW into single hex
-  Iset = SAVE[8];     // IREF current value
+  Iset = SAVE[8];     // IREF current value, remember 0x3F is maximum, 0.5 mA reference current
 
+  // Set the device according to read values
   P05 = On;              // Enable or disable LT8410, enable MUX36D08 and 2x MUX36S16
+
+  // Initialize timer 3 overflow/interrupts with the set frequency
+  T3_init(F_hz_HB, F_hz_LB);            // Remember, 0x5D3D is 20 Hz, 0x5D is HB, 0x3D is LB
+
   TMR3CN0 |= TMR3CN0_TR3__RUN; // start timer 3 for stimulation
   while(1){
       Biphasic_protocol();
@@ -220,6 +224,27 @@ void T0_Waitus (uint8_t us)
    TCON_TR0 = 0;                            // Stop Timer0
 }
 
+// Function: T3_init
+// * --------------------
+// * Intializes timer 3 to generate interrupts according to required frequency.
+//
+void T3_init(uint8_t freq_L, uint8_t freq_H){
+  // Save Timer Configuration
+  uint8_t TMR3CN0_TR3_save;
+  TMR3CN0_TR3_save = TMR3CN0 & TMR3CN0_TR3__BMASK;
+  // Stop Timer
+  TMR3CN0 &= ~(TMR3CN0_TR3__BMASK);
+  // Initialize the timer
+  // Set high and low bytes to 0xFF
+  TMR3H = (0xFF << TMR3H_TMR3H__SHIFT);
+  TMR3L = (0xFF << TMR3L_TMR3L__SHIFT);
+  // Set high and low overflow reload bytes
+  TMR3RLH = (freq_H << TMR3RLH_TMR3RLH__SHIFT);
+  TMR3RLL = (freq_L << TMR3RLL_TMR3RLL__SHIFT);
+  // Restore Timer Configuration
+  TMR3CN0 |= TMR3CN0_TR3_save;
+}
+
 // Function: Biphasic_protocol
 // * --------------------
 // * Biphasic stimulation with the pulmonary/laryngeal protocol
@@ -239,20 +264,13 @@ void Biphasic_protocol(void){
       // Handle RTC Alarm
       if(RTC_Alarm)
           {
-
            RTC_Alarm = 0;                // Reset RTC Alarm Flag to indicate
                            // that we have detected an alarm
                            // and are handling the alarm event
-
-           //
-           isStim = !isStim;       // Change stim state
-
+           isStim = !isStim;       // Change stimulation state
           }
       // Stimulation state. Stay awake.
       if (isStim) {
-
-
-
         MUX36S16_output(mux36s16_state);
         while((PMU0CF & RTCAWK) == 0); // Wait for next alarm or clock failure, then clear flags
         // Initiate interrupts. Interrupts in process until the next RTC alarm
