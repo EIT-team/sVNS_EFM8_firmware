@@ -35,16 +35,11 @@ uint8_t F_hz;
 uint8_t Iset;
 bool stimDelivering;
 bool isStim = 0;
-//extern volatile uint16_t i_50us;
-//extern volatile uint8_t i_50us;
-//extern volatile float timer2;
-//const float cycles_large = 2e6/50;
 uint8_t set = 1;
 uint8_t j;
 float cycles;
 float half_T_on;
-// uint32_t chunks_30 = 30e6 / 50; // holds how many chunks of 50 us fit in 30 seconds pulse train/pulse off period
-// volatile uint8_t isstim = 1;
+
 // Stimulation function prototypes
 void Polarity(uint8_t);
 void T0_Waitus (uint8_t);
