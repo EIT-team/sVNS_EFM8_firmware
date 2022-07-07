@@ -34,7 +34,10 @@ uint8_t F_hz_HB;        // Pulse frequency high byte, Hz
 uint8_t F_hz_LB;        // Pulse frequency low byte, Hz
 uint16_t F_hz;          // Pulse frequency 16-bit word, Hz
 uint8_t Iset;           // Set IREF current reference value, 0-63 (decimal) / 0 - 3F (hex)
-uint8_t T_on;           // Stimulation time on and off, seconds
+// uint8_t T_on;           // Stimulation time on and off, seconds
+uint8_t T_on_alarm_0;
+uint8_t T_on_alarm_1;
+uint8_t T_on_alarm_2;
 bool On;                // Voltage converter and 20V plane switch -> Switches stimulation circuit
 // uint8_t Protocol;       // Protocol type, 0 - Biphasic pulmonary, 1 - Biphasic laryngeal, 2 - Biphasic general uninterrupted, 3 - Monophasic
 // Used in workflow:
@@ -48,7 +51,7 @@ void Pulse_On(void);
 void Pulse_Off(void);
 void Biphasic_protocol(void);
 uint8_t getByte (uint16_t, uint8_t);
-void RTC_Fhz_set (uint16_t);
+void RTC_alarm_set (uint8_t,uint8_t,uint8_t);
 
 
 // I2C
@@ -145,8 +148,10 @@ main (void)
   PW_LB = SAVE[1]; // Pulse Width in chunks of 50 us low byte
   F_hz_HB = SAVE[2]; // Pulse frequency high byte
   F_hz_LB = SAVE[3]; // Pulse frequency low byte
-  T_on = SAVE[4];    // Stimulation protcol time on/off
-  On = SAVE[5];
+  T_on_alarm_0 = SAVE[4];    // Stimulation protcol time on/off
+  T_on_alarm_1 = SAVE[5];
+  T_on_alarm_2 = SAVE[6];
+  On = SAVE[7];
   PW = (PW_HB<<8)|(PW_LB); // Combine PW into single hex
   F_hz = (F_hz_HB<<8)|(F_hz_LB); // Combine IPW into single hex
   Iset = SAVE[8];     // IREF current value, remember 0x3F is maximum, 0.5 mA reference current
@@ -155,7 +160,10 @@ main (void)
   P05 = On;              // Enable or disable LT8410, enable MUX36D08 and 2x MUX36S16
 
   // Initialize timer 3 overflow/interrupts with the set frequency
-  T3_init(F_hz_HB, F_hz_LB);            // Remember, 0x5D3D is 20 Hz, 0x5D is HB, 0x3D is LB
+  T3_init(F_hz_HB,F_hz_LB);            // Remember, 0x5D3D is 20 Hz, 0x5D is HB, 0x3D is LB
+  // Set duty cycle using RTC
+  RTC_alarm_set(T_on_alarm_0, T_on_alarm_1,T_on_alarm_2);
+      // Remember, for proper laryngeal timing (5 sec on, 5 sec off) alarm0 = 00, alarm1 = 0x70, alarm2 = 0x02
 
   TMR3CN0 |= TMR3CN0_TR3__RUN; // start timer 3 for stimulation
   while(1){
@@ -228,7 +236,7 @@ void T0_Waitus (uint8_t us)
 // * --------------------
 // * Intializes timer 3 to generate interrupts according to required frequency.
 //
-void T3_init(uint8_t freq_L, uint8_t freq_H){
+void T3_init(uint8_t freq_H, uint8_t freq_L){
   // Save Timer Configuration
   uint8_t TMR3CN0_TR3_save;
   TMR3CN0_TR3_save = TMR3CN0 & TMR3CN0_TR3__BMASK;
@@ -406,24 +414,33 @@ getByte (uint16_t number, uint8_t N)
 }
 
 /*
- * Function: RTC_Fhz_set
+ * Function: RTC_alarm_set
  * Sets pulse frequency as RTC alarm to wake up the MCU at pulse generation time
- * freq - low byte of the frequency hexadecimal value
+ * time - low byte of the frequency hexadecimal value
  */
 void
-RTC_Fhz_set (uint16_t freq) // make freq float instead of uiunt16??
+RTC_alarm_set (uint8_t alarm_0, uint8_t alarm_1, uint8_t alarm_2)
 {
-  uint8_t alarm0; // RTC set alarm LB
-  uint8_t alarm1; // RTC set alarm HB
   // Conversion to the RTC alarm value
-  uint16_t F_alarm_value;
-//  F_alarm_value = 16384 / freq; // 16384 is the RTC low freq oscillator. However, the RTC LFosc behaves like 32768 counter. (see RTC reference manual)
-  F_alarm_value = 32768 / freq;
-  // decToHexa(F_alarm_value); // convert to Hex
+
+  // Frequency implementation, the frequency is argument of the function
+
+  //  uint16_t F_alarm_value;
+  //  F_alarm_value = 16384 / freq_Hz; // Test value
+  //  16384 is the RTC low time oscillator. However, the RTC LFosc behaves like 32768 counter. (see RTC reference manual)
+  //  F_alarm_value = 32768 / freq_Hz;
+
+  // Time implementation, the time is argument of the function
+
+  //  16384 is the RTC low time oscillator. However, the RTC LFosc behaves like 32768 counter. (see RTC reference manual)
+  //  F_alarm_value = 32768 / (1/time); //
+
   // Get high and low bytes of F_alarm_value:
-  alarm0 = getByte (F_alarm_value, 0);
-  alarm1 = getByte (F_alarm_value, 1);
-  // Re-set the RTC from the start
+  //  alarm0 = getByte (F_alarm_value, 0);
+  //  alarm1 = getByte (F_alarm_value, 1);
+  //  alarm2 = getByte (F_alarm_value, 2);
+
+  // Re-set the RTC according to new values
   // RTC oscillator control
 
   RTC0ADR = RTC0XCN0;
@@ -431,24 +448,29 @@ RTC_Fhz_set (uint16_t freq) // make freq float instead of uiunt16??
       | RTC0XCN0_BIASX2__DISABLED | RTC0XCN0_LFOEN__ENABLED;
   while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
     ;
-  // Program RTC alarm value 0
+  // Program RTC alarm value 0 - ms
   RTC0ADR = ALARM0;
-  RTC0DAT = (alarm0 << ALARM0_ALARM0__SHIFT);
+  RTC0DAT = (alarm_0 << ALARM0_ALARM0__SHIFT);
   while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
     ;
-  // Program RTC alarm value 1
+  // Program RTC alarm value 1  - sec1, "LB"
   RTC0ADR = ALARM1;
-  RTC0DAT = (alarm1 << ALARM1_ALARM1__SHIFT);
+  RTC0DAT = (alarm_1 << ALARM1_ALARM1__SHIFT);
   while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
     ;
-  // RTC control. Prepare to be started, do not start yet.
+  // Program RTC alarm value 2  - sec2, "HB"
+  RTC0ADR = ALARM2;
+  RTC0DAT = (alarm_2 << ALARM2_ALARM2__SHIFT);
+  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
+    ;    //Poll Busy Bit
+
+  // RTC control. Prepare and start the RTC
   RTC0ADR = RTC0CN0;
-  RTC0DAT = RTC0CN0_RTC0EN__ENABLED | RTC0CN0_RTC0TR__STOP
-      | RTC0CN0_MCLKEN__ENABLED | RTC0CN0_RTC0AEN__DISABLED
-      | RTC0CN0_ALRM__NOT_SET | RTC0CN0_RTC0CAP__NOT_SET
-      | RTC0CN0_RTC0SET__NOT_SET;
+  RTC0DAT = RTC0CN0_RTC0EN__ENABLED | RTC0CN0_RTC0TR__RUN
+      | RTC0CN0_MCLKEN__ENABLED | RTC0CN0_RTC0AEN__ENABLED | RTC0CN0_ALRM__SET
+      | RTC0CN0_RTC0CAP__NOT_SET | RTC0CN0_RTC0SET__NOT_SET;
   while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
-    ;
+    ;    //Poll Busy Bit
 }
 
 void sampleADC(void)
