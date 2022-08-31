@@ -210,7 +210,7 @@ SI_INTERRUPT(TIMER3_ISR, TIMER3_IRQn)
     Polarity(0);// Shunted
     Pulse_Off();
     // Sample op amp output
-    sampleADC();
+    // sampleADC();
     TMR3CN0 &= ~0x80;// Clear Timer3 interrupt-pending flag
   }
 
