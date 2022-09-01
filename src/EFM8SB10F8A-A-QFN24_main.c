@@ -34,6 +34,8 @@ uint8_t F_hz_HB;        // Pulse frequency high byte, Hz
 uint8_t F_hz_LB;        // Pulse frequency low byte, Hz
 uint16_t F_hz;          // Pulse frequency 16-bit word, Hz
 uint8_t Iset;           // Set IREF current reference value, 0-63 (decimal) / 0 - 3F (hex)
+uint8_t mode;           // Stimulation mode. 1 for multichannel scan, 2 for singlechannel uninterrupted stimulation
+uint8_t channel_nr;     // Preset channel number for the single-channel stimulation
 // uint8_t T_on;           // Stimulation time on and off, seconds
 uint8_t T_on_alarm_0;
 uint8_t T_on_alarm_1;
@@ -50,6 +52,7 @@ void T3_init(uint8_t, uint8_t);
 void Pulse_On(void);
 void Pulse_Off(void);
 void Biphasic_protocol(void);
+void Biphasic_protocol_single_channel(void);
 uint8_t getByte (uint16_t, uint8_t);
 void RTC_alarm_set (uint8_t,uint8_t,uint8_t);
 
@@ -155,7 +158,7 @@ main (void)
   PW = (PW_HB<<8)|(PW_LB); // Combine PW into single hex
   F_hz = (F_hz_HB<<8)|(F_hz_LB); // Combine IPW into single hex
   Iset = SAVE[8];     // IREF current value, remember 0x3F is maximum, 0.5 mA reference current
-
+  mode = SAVE[9];
   // Set the device according to read values
   P05 = On;              // Enable or disable LT8410, enable MUX36D08 and 2x MUX36S16
 
@@ -167,7 +170,12 @@ main (void)
 
   TMR3CN0 |= TMR3CN0_TR3__RUN; // start timer 3 for stimulation
   while(1){
-      Biphasic_protocol();
+      if (mode == 1) {
+          Biphasic_protocol();
+      }
+      else if (mode == 2) {
+          Biphasic_protocol_single_channel();
+      }
   };
 }
 
@@ -294,6 +302,47 @@ void Biphasic_protocol(void){
         else {
             mux36s16_state = 0;
         }
+      }
+      else {
+          // Interburst state. Place the device into the sleep mode
+          LPM(SLEEP);  // Enter Sleep Until Next Alarm
+      }
+    }
+}
+
+// Function: Biphasic_protocol_single_channel
+// * --------------------
+// * Uninterrupted single channel biphasic stimulation
+// * with the pulmonary/laryngeal protocol
+//
+void Biphasic_protocol_single_channel(void)
+{
+  while(1){
+      // Handle RTC failure
+      if(RTC_Failure)
+      {
+       RTC_Failure = 0;              // Reset RTC Failure Flag to indicate
+                       // that we have detected an RTC failure
+                       // and are handling the event
+       // Do something...RTC Has Stopped Oscillating
+       while(1);                     // <Insert Handler Code Here>
+      }
+      // Handle RTC Alarm
+      if(RTC_Alarm)
+          {
+           RTC_Alarm = 0;                // Reset RTC Alarm Flag to indicate
+                           // that we have detected an alarm
+                           // and are handling the alarm event
+           isStim = !isStim;       // Change stimulation state
+          }
+      // Stimulation state. Stay awake.
+      if (isStim) {
+        MUX36S16_output(channel_nr);
+        while((PMU0CF & RTCAWK) == 0); // Wait for next alarm or clock failure, then clear flags
+        // Initiate interrupts. Interrupts in process until the next RTC alarm
+        if(PMU0CF & RTCAWK) RTC_Alarm = 1;
+        if(PMU0CF & RTCFWK) RTC_Failure = 1;
+        PMU0CF = 0x20;
       }
       else {
           // Interburst state. Place the device into the sleep mode
