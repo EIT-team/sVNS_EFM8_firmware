@@ -159,6 +159,7 @@ main (void)
   F_hz = (F_hz_HB<<8)|(F_hz_LB); // Combine IPW into single hex
   Iset = SAVE[8];     // IREF current value, remember 0x3F is maximum, 0.5 mA reference current
   mode = SAVE[9];
+  channel_nr = SAVE[10];
   // Set the device according to read values
   P05 = On;              // Enable or disable LT8410, enable MUX36D08 and 2x MUX36S16
 
