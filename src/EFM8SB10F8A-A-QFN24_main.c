@@ -543,8 +543,18 @@ RTC_alarm_set (uint8_t alarm_0, uint8_t alarm_1, uint8_t alarm_2)
     ;    //Poll Busy Bit
 }
 
+/*
+ * Function: Write_Channel
+ * -----------------------
+ * For the multichannel stimulation writes the current channel number to NT3H
+ * (Address 8 on the NFC Tools GUI)
+ */
 void Write_Channel(uint8_t channel_to_write)
 {
+  if (channel_to_write >= 14){
+      channel_to_write = channel_to_write - 1; // Because in the MUX36S16 wiring channel 14 is skipped, in the multichannel scanning mode, channel 14 is skipped
+      // and wired to channel 15, but for the user who has just the cuff it is irrelevant and unnecessary to know, hence write on the NFC channel 14 as "14" (decimal 13/hex D).
+  }
   SMB_DATA_OUT[0] = channel_to_write;
   TARGET = SLAVE_ADDR;
   SMB_Write();                     // Initiate SMBus write
