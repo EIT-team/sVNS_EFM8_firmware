@@ -76,6 +76,7 @@ SI_SBIT (SCL, SFR_P0, 1);                   // and P0.1
 void SMB_Write (void);
 void SMB_Read (void);
 void SDA_Reset(void);
+void Write_Channel(uint8_t);
 
 // LT8410, MUX36 shutdown pin
 SI_SBIT (P05, SFR_P0, 5);                   // Pin 0.5 for SHDN (20V stage) enable/disable
@@ -88,6 +89,8 @@ SI_SBIT (P14, SFR_P1, 4);                   // Pin 1.4 for MUX36S16 A3
 uint8_t mux36s16_state = 0;                 // MUX36S16 state byte
 // MUX36S16 state function
 void MUX36S16_output(uint8_t);
+// Channel check function due to the skipped MUX36S16 channel S14A and S14B
+void check_channel();
 
 // MUX36D08 - multiplexer for output channels, pins 0.2 - 0.4
 SI_SBIT (P02, SFR_P0, 2);                   // Pin 0.2 for MUX36D08 A0
@@ -160,6 +163,7 @@ main (void)
   Iset = SAVE[8];     // IREF current value, remember 0x3F is maximum, 0.5 mA reference current
   mode = SAVE[9];
   channel_nr = SAVE[10];
+  check_channel(); // checks if user wants channel 14 or 15 (channel 14 is skipped in MUX36S16)
   // Set the device according to read values
   P05 = On;              // Enable or disable LT8410, enable MUX36D08 and 2x MUX36S16
 
@@ -289,6 +293,7 @@ void Biphasic_protocol(void){
       // Stimulation state. Stay awake.
       if (isStim) {
         MUX36S16_output(mux36s16_state);
+        Write_Channel(mux36s16_state);
         while((PMU0CF & RTCAWK) == 0); // Wait for next alarm or clock failure, then clear flags
         // Initiate interrupts. Interrupts in process until the next RTC alarm
         if(PMU0CF & RTCAWK) RTC_Alarm = 1;
@@ -424,6 +429,21 @@ void MUX36S16_output(uint8_t mux36s16_state){
 }
 
 /*
+ * Function: check_channel
+ * -----------------------
+ * Because channel 14 for the output MUX36S16 is skipped,
+ * channel numbers are shifted by one for the channel 14 (decimal code 13, hex D) and 15
+ * (decimal code 14, hex E). Calibrate that such that user can input standard channels
+ * according to the channel cuff enumeration.
+ */
+void check_channel()
+{
+  if (channel_nr >= 13){
+      channel_nr = channel_nr + 1;
+  }
+}
+
+/*
  * Function: MUX36D08_output
  * -------------------------------
  * MUX36D08 output selection function
@@ -521,6 +541,13 @@ RTC_alarm_set (uint8_t alarm_0, uint8_t alarm_1, uint8_t alarm_2)
       | RTC0CN0_RTC0CAP__NOT_SET | RTC0CN0_RTC0SET__NOT_SET;
   while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
     ;    //Poll Busy Bit
+}
+
+void Write_Channel(uint8_t channel_to_write)
+{
+  SMB_DATA_OUT[0] = channel_to_write;
+  TARGET = SLAVE_ADDR;
+  SMB_Write();                     // Initiate SMBus write
 }
 
 void sampleADC(void)
