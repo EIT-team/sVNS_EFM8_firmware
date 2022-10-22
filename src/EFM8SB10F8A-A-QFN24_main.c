@@ -161,7 +161,7 @@ main (void)
   PW = (PW_HB<<8)|(PW_LB); // Combine PW into single hex
   F_hz = (F_hz_HB<<8)|(F_hz_LB); // Combine IPW into single hex
   Iset = SAVE[8];     // IREF current value, remember 0x3F is maximum, 0.5 mA reference current
-  mode = SAVE[9];
+  mode = SAVE[9];     // Stimulation mode. 1 - Channel scanning; 2 - Single channel stimulation
   channel_nr = SAVE[10];
   check_channel(); // checks if user wants channel 14 or 15 (channel 14 is skipped in MUX36S16)
   // Set the device according to read values
