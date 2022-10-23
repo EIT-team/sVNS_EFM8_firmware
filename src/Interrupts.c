@@ -38,6 +38,9 @@ bool Read_Init = 0;
 // SMBUS0_ISR
 //-----------------------------------------------------------------------------
 //
+// Modified SMBUS communication protocol for I2C communication with NT3H2211.
+// Read/Write compatible. Modified by Ed.
+//
 // SMBUS0 ISR Content goes here. Remember to clear flag bits:
 // SMB0CN0::SI (SMBus Interrupt Flag)
 //
@@ -122,7 +125,7 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
               {
                 SMB0CN0_STO = 1;                // Send STOP condition, followed
                 SMB0CN0_STA = 1;// By a START
-                NUM_ERRORS++;// Indicate error
+                NUM_ERRORS++;// Indicate error. Useful for debugging if SMBus is stuck.
               }
             break;
 
@@ -192,6 +195,8 @@ SI_INTERRUPT(SMBUS0_ISR, SMBUS0_IRQn)
 // TMR3CN0::TF3L (Timer # Low Byte Overflow Flag)
 //
 //-----------------------------------------------------------------------------
+// Biphasic pulse sequence when the pulse frequency timer (Timer 3) overflows 
+// and initiates ISR
 SI_INTERRUPT(TIMER3_ISR, TIMER3_IRQn)
   {
     Polarity(0); // start shunted

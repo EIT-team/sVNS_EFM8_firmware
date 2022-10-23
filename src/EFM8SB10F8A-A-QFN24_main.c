@@ -175,7 +175,7 @@ main (void)
 
   TMR3CN0 |= TMR3CN0_TR3__RUN; // start timer 3 for stimulation
   while(1){
-      if (mode == 1) {
+      if (mode == 1) {  // See function descriptions below to understand the functionality of modes
           Biphasic_protocol();
       }
       else if (mode == 2) {
@@ -186,6 +186,11 @@ main (void)
 
 // Function definitions
 
+/*
+ * Function: Polarity
+ * --------------------
+ * Sets MUX36D08 switch polarity.
+ */
 void Polarity(char polar) {
   switch (polar) {
   case 1: // Forward polarity
@@ -220,6 +225,7 @@ void Pulse_Off(void){
  * --------------------
  * Wait function based on timer 0 overflow.
  * Overflows every 50 us. Does not generate interrupt.
+ * Commented lines are original overflow bits and some of my calculations.
  */
 void T0_Waitus (uint8_t us)
 {
@@ -268,7 +274,7 @@ void T3_init(uint8_t freq_H, uint8_t freq_L){
 
 // Function: Biphasic_protocol
 // * --------------------
-// * Biphasic stimulation with the pulmonary/laryngeal protocol
+// * Biphasic stimulation with the channel scanning protocol
 //
 void Biphasic_protocol(void){
   MUX36S16_output(0);
@@ -292,21 +298,21 @@ void Biphasic_protocol(void){
           }
       // Stimulation state. Stay awake.
       if (isStim) {
-        MUX36S16_output(mux36s16_state);
-        Write_Channel(mux36s16_state);
+        MUX36S16_output(mux36s16_state);  // Select the channel
+        Write_Channel(mux36s16_state);    // Write channel feedback to the NFC
         while((PMU0CF & RTCAWK) == 0); // Wait for next alarm or clock failure, then clear flags
         // Initiate interrupts. Interrupts in process until the next RTC alarm
         if(PMU0CF & RTCAWK) RTC_Alarm = 1;
         if(PMU0CF & RTCFWK) RTC_Failure = 1;
         PMU0CF = 0x20;
         if ((mux36s16_state < 16)){
-            mux36s16_state ++;
-            if (mux36s16_state == 13){
+            mux36s16_state ++;          // Switch the channel when the RTC time is reached
+            if (mux36s16_state == 13){  // Handle channel 13 wiring error (see EAGLE schematic)
                 mux36s16_state = 14;
             }
         }
         else {
-            mux36s16_state = 0;
+            mux36s16_state = 0;     // When the channel 16 reached, reset to the channel 0
         }
       }
       else {
@@ -318,8 +324,7 @@ void Biphasic_protocol(void){
 
 // Function: Biphasic_protocol_single_channel
 // * --------------------
-// * Uninterrupted single channel biphasic stimulation
-// * with the pulmonary/laryngeal protocol
+// * Uninterrupted pre-selected single channel biphasic stimulation. 
 //
 void Biphasic_protocol_single_channel(void)
 {
@@ -343,7 +348,7 @@ void Biphasic_protocol_single_channel(void)
           }
       // Stimulation state. Stay awake.
       if (isStim) {
-        MUX36S16_output(channel_nr);
+        MUX36S16_output(channel_nr);    // Select the stimulation channel based on the NFC reading
         while((PMU0CF & RTCAWK) == 0); // Wait for next alarm or clock failure, then clear flags
         // Initiate interrupts. Interrupts in process until the next RTC alarm
         if(PMU0CF & RTCAWK) RTC_Alarm = 1;
@@ -357,6 +362,10 @@ void Biphasic_protocol_single_channel(void)
     }
 }
 
+// Function: SDA_Reset
+// * --------------------
+// * Reset I2C if the SDA line busy. 
+//
 void SDA_Reset(void)
 {
     uint8_t j;                    // Dummy variable counters
