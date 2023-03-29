@@ -451,9 +451,9 @@ TIMER01_0_enter_DefaultMode_from_smbus_reset (void)
 
   // $[TL0 - Timer 0 Low Byte]
   /***********************************************************************
-   - Timer 0 Low Byte = 0x1E
+   - Timer 0 Low Byte = 0xE1
    ***********************************************************************/
-  TL0 = (0x1E << TL0_TL0__SHIFT);
+  TL0 = (0xE1 << TL0_TL0__SHIFT);
   // [TL0 - Timer 0 Low Byte]$
 
   // $[TH1 - Timer 1 High Byte]
@@ -532,19 +532,29 @@ TIMER_SETUP_0_enter_DefaultMode_from_smbus_reset (void)
   // $[CKCON0 - Clock Control 0]
   /***********************************************************************
    - System clock divided by 4
-   - Counter/Timer 0 uses the clock defined by the prescale field, SCA
+   - Counter/Timer 0 uses the system clock
    - Timer 2 high byte uses the clock defined by T2XCLK in TMR2CN0
    - Timer 2 low byte uses the system clock
    - Timer 3 high byte uses the clock defined by T3XCLK in TMR3CN0
    - Timer 3 low byte uses the system clock
    - Timer 1 uses the system clock
    ***********************************************************************/
-  CKCON0 = CKCON0_SCA__SYSCLK_DIV_4 | CKCON0_T0M__PRESCALE
+  CKCON0 = CKCON0_SCA__SYSCLK_DIV_4 | CKCON0_T0M__SYSCLK
       | CKCON0_T2MH__EXTERNAL_CLOCK | CKCON0_T2ML__SYSCLK
       | CKCON0_T3MH__EXTERNAL_CLOCK | CKCON0_T3ML__SYSCLK | CKCON0_T1M__SYSCLK;
   // [CKCON0 - Clock Control 0]$
 
   // $[TMOD - Timer 0/1 Mode]
+  /***********************************************************************
+   - Mode 1, 16-bit Counter/Timer
+   - Mode 0, 13-bit Counter/Timer
+   - Timer Mode
+   - Timer 0 enabled when TR0 = 1 irrespective of INT0 logic level
+   - Timer Mode
+   - Timer 1 enabled when TR1 = 1 irrespective of INT1 logic level
+   ***********************************************************************/
+  TMOD = TMOD_T0M__MODE1 | TMOD_T1M__MODE0 | TMOD_CT0__TIMER
+      | TMOD_GATE0__DISABLED | TMOD_CT1__TIMER | TMOD_GATE1__DISABLED;
   // [TMOD - Timer 0/1 Mode]$
 
   // $[TCON - Timer 0/1 Control]

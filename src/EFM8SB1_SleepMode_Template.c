@@ -55,7 +55,7 @@ bool isStim = 0;        // Stimulation on/off status for the sleep mode initiati
 
 // Stimulation function prototypes
 void Polarity(uint8_t);
-void T0_Waitus (uint8_t);
+void T0_Waitus (uint16_t);
 void T2_Waitus(uint16_t);
 void Pulse_On(void);
 void Pulse_Off(void);
@@ -218,24 +218,27 @@ int main (void)
 }
 
 void Stim_Sequence(uint16_t PW, uint16_t T) {
-  Polarity(0); // start shunted
+  //Polarity(0); // start shunted
   Polarity(1);// Forward polarity
   Pulse_On();
-  T2_Waitus(PW);
+  //T0_Waitus(PW);
+  T0_Waitus(1);
   // (-) phase for next PW * 50 us
   Pulse_Off();
   // Shunt and reverse
-  Polarity(0);// Shunted
+  //Polarity(0);// Shunted
   Polarity(2);// Reverse
   Pulse_On();
-  T2_Waitus(PW);
+  //T0_Waitus(PW);
+  T0_Waitus(1);
   // (+) phase for next PW * 50 us
   // 2* PW * 50 us passed, stop stimulation
-  Polarity(0);// Shunted
+  //Polarity(0);// Shunted
   Pulse_Off();
   // Sample op amp output
   // sampleADC();
-  T2_Waitus(T - 2 * PW); // Wait for the remaining duration of the period
+  //T0_Waitus(T - 2 * PW); // Wait for the remaining duration of the period
+  T0_Waitus(900);
 }
 
 
@@ -282,7 +285,7 @@ void Pulse_Off(void){
  * Overflows every 50 us. Does not generate interrupt.
  * Commented lines are original overflow bits and some of my calculations.
  */
-void T0_Waitus (uint8_t us)
+void T0_Waitus (uint16_t us)
 {
    TCON &= ~0x30;                      // Stop Timer0; Clear TCON_TF0
    TMOD &= ~0x0f;                      // 16-bit free run mode
@@ -296,7 +299,7 @@ void T0_Waitus (uint8_t us)
       // Overflow in 0xFC18 (64536) cycles, which for the 20 MHz is 50 us.
       TH0 = (0xFF << TH0_TH0__SHIFT);
       //TL0 = ((-SYSCLK/1000) & 0xFF);
-      TL0 = (0x1E << TL0_TL0__SHIFT);
+      TL0 = (0xE1 << TL0_TL0__SHIFT);
       TCON_TF0 = 0;                         // Clear overflow indicator
       TCON_TR0 = 1;                         // Start Timer0
       while (!TCON_TF0);                    // Wait for overflow
