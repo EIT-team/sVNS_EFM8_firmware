@@ -221,7 +221,7 @@ void Stim_Sequence(uint16_t PW, uint16_t T) {
   Polarity(1);// Forward polarity
   Pulse_On();
   //T0_Waitus(PW);
-  T2_Waitus(1);
+  T0_Waitus(1);
   // (-) phase for next PW * 50 us
   Pulse_Off();
   Polarity(0);

@@ -441,17 +441,9 @@ TIMER01_0_enter_DefaultMode_from_smbus_reset (void)
   // [Timer Initialization]$
 
   // $[TH0 - Timer 0 High Byte]
-  /***********************************************************************
-   - Timer 0 High Byte = 0xFF
-   ***********************************************************************/
-  TH0 = (0xFF << TH0_TH0__SHIFT);
   // [TH0 - Timer 0 High Byte]$
 
   // $[TL0 - Timer 0 Low Byte]
-  /***********************************************************************
-   - Timer 0 Low Byte = 0xF1
-   ***********************************************************************/
-  TL0 = (0xF1 << TL0_TL0__SHIFT);
   // [TL0 - Timer 0 Low Byte]$
 
   // $[TH1 - Timer 1 High Byte]
@@ -544,18 +536,22 @@ TIMER_SETUP_0_enter_DefaultMode_from_smbus_reset (void)
 
   // $[TMOD - Timer 0/1 Mode]
   /***********************************************************************
-   - Mode 1, 16-bit Counter/Timer
+   - Mode 2, 8-bit Counter/Timer with Auto-Reload
    - Mode 0, 13-bit Counter/Timer
    - Timer Mode
    - Timer 0 enabled when TR0 = 1 irrespective of INT0 logic level
    - Timer Mode
    - Timer 1 enabled when TR1 = 1 irrespective of INT1 logic level
    ***********************************************************************/
-  TMOD = TMOD_T0M__MODE1 | TMOD_T1M__MODE0 | TMOD_CT0__TIMER
+  TMOD = TMOD_T0M__MODE2 | TMOD_T1M__MODE0 | TMOD_CT0__TIMER
       | TMOD_GATE0__DISABLED | TMOD_CT1__TIMER | TMOD_GATE1__DISABLED;
   // [TMOD - Timer 0/1 Mode]$
 
   // $[TCON - Timer 0/1 Control]
+  /***********************************************************************
+   - Start Timer 0 running
+   ***********************************************************************/
+  TCON |= TCON_TR0__RUN;
   // [TCON - Timer 0/1 Control]$
 
 }
@@ -605,12 +601,10 @@ SMBUS_0_enter_DefaultMode_from_smbus_reset (void)
 
   // $[SMB0CF - SMBus 0 Configuration]
   /***********************************************************************
-   - Timer 2 Low Byte Overflow
    - Slave states are inhibited
    - Enable the SMBus module
    ***********************************************************************/
-  SMB0CF |= SMB0CF_SMBCS__TIMER2_LOW | SMB0CF_INH__SLAVE_DISABLED
-      | SMB0CF_ENSMB__ENABLED;
+  SMB0CF |= SMB0CF_INH__SLAVE_DISABLED | SMB0CF_ENSMB__ENABLED;
   // [SMB0CF - SMBus 0 Configuration]$
 
 }
