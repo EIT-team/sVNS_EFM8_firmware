@@ -130,12 +130,10 @@ enter_DefaultMode_from_smbus_reset (void)
   // $[Config Calls]
   // Save the SFRPAGE
   uint8_t SFRPAGE_save = SFRPAGE;
-  PCA_0_enter_DefaultMode_from_smbus_reset ();
   PORTS_0_enter_DefaultMode_from_smbus_reset ();
   PORTS_1_enter_DefaultMode_from_smbus_reset ();
   PBCFG_0_enter_DefaultMode_from_smbus_reset ();
   RSTSRC_0_enter_DefaultMode_from_smbus_reset ();
-  RTC_0_enter_DefaultMode_from_smbus_reset ();
   CLOCK_0_enter_DefaultMode_from_smbus_reset ();
   TIMER01_0_enter_DefaultMode_from_smbus_reset ();
   TIMER16_2_enter_DefaultMode_from_smbus_reset ();
@@ -419,10 +417,10 @@ CLOCK_0_enter_DefaultMode_from_smbus_reset (void)
 {
   // $[CLKSEL - Clock Select]
   /***********************************************************************
-   - SYSCLK is equal to selected clock source divided by 16
+   - SYSCLK is equal to selected clock source divided by 8
    - Clock derived from the Internal Low Power Oscillator
    ***********************************************************************/
-  CLKSEL = CLKSEL_CLKDIV__SYSCLK_DIV_16 | CLKSEL_CLKSL__LPOSC;
+  CLKSEL = CLKSEL_CLKDIV__SYSCLK_DIV_8 | CLKSEL_CLKSL__LPOSC;
   // Wait for the clock to be ready
   while ((CLKSEL & CLKSEL_CLKRDY__BMASK) != CLKSEL_CLKRDY__SET)
     ;
@@ -451,9 +449,9 @@ TIMER01_0_enter_DefaultMode_from_smbus_reset (void)
 
   // $[TL0 - Timer 0 Low Byte]
   /***********************************************************************
-   - Timer 0 Low Byte = 0xE1
+   - Timer 0 Low Byte = 0xF1
    ***********************************************************************/
-  TL0 = (0xE1 << TL0_TL0__SHIFT);
+  TL0 = (0xF1 << TL0_TL0__SHIFT);
   // [TL0 - Timer 0 Low Byte]$
 
   // $[TH1 - Timer 1 High Byte]
@@ -507,9 +505,9 @@ TIMER16_2_enter_DefaultMode_from_smbus_reset (void)
 
   // $[TMR2RLL - Timer 2 Reload Low Byte]
   /***********************************************************************
-   - Timer 2 Reload Low Byte = 0xC2
+   - Timer 2 Reload Low Byte = 0x83
    ***********************************************************************/
-  TMR2RLL = (0xC2 << TMR2RLL_TMR2RLL__SHIFT);
+  TMR2RLL = (0x83 << TMR2RLL_TMR2RLL__SHIFT);
   // [TMR2RLL - Timer 2 Reload Low Byte]$
 
   // $[TMR2CN0]
@@ -758,9 +756,9 @@ TIMER16_3_enter_DefaultMode_from_smbus_reset (void)
 
   // $[TMR3RLL - Timer 3 Reload Low Byte]
   /***********************************************************************
-   - Timer 3 Reload Low Byte = 0xC2
+   - Timer 3 Reload Low Byte = 0x83
    ***********************************************************************/
-  TMR3RLL = (0xC2 << TMR3RLL_TMR3RLL__SHIFT);
+  TMR3RLL = (0x83 << TMR3RLL_TMR3RLL__SHIFT);
   // [TMR3RLL - Timer 3 Reload Low Byte]$
 
   // $[TMR3CN0]

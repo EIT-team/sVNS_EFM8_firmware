@@ -132,12 +132,12 @@ int main (void)
   }
   // Initialize normal operation
   enter_DefaultMode_from_smbus_reset ();
-	RTC0CN0_Local = 0xC0;                // Initialize Local Copy of RTC0CN0
-	RTC_WriteAlarm(WAKE_INTERVAL_TICKS);// Set the Alarm Value
-	RTC0CN0_SetBits(RTC0TR+RTC0AEN+ALRM);// Enable Counter, Alarm, and Auto-Reset
+	//RTC0CN0_Local = 0xC0;                // Initialize Local Copy of RTC0CN0
+	//RTC_WriteAlarm(WAKE_INTERVAL_TICKS);// Set the Alarm Value
+	//RTC0CN0_SetBits(RTC0TR+RTC0AEN+ALRM);// Enable Counter, Alarm, and Auto-Reset
 
-	LPM_Init();                         // Initialize Power Management
-	LPM_Enable_Wakeup(RTC);
+	//LPM_Init();                         // Initialize Power Management
+	//LPM_Enable_Wakeup(RTC);
 
   // Read data-stimulation parameters from NT3H via I2C
   TARGET = SLAVE_ADDR;         // NT3H slave address, 0xAA for NT3H
@@ -163,45 +163,45 @@ int main (void)
   P05 = On;              // Enable or disable LT8410, enable MUX36D08 and 2x MUX36S16
   PW = (PW_HB<<8)|(PW_LB); // Combine PW into single hex
   T = (T_HB<<8)|(T_LB); // Combine pulse period into single hex
-  RTC_Alarm = 1; // first iteration
+  //RTC_Alarm = 1; // first iteration
 	//----------------------------------
 	// Main Application Loop
 	//----------------------------------
 	while (1)
 	{
 
-	  //-----------------------------------------------------------------------
-	  // Task #1 - Handle RTC Failure
-	  //-----------------------------------------------------------------------
-	  if(RTC_Failure)
-	  {
-		 RTC_Failure = 0;              // Reset RTC Failure Flag to indicate
-									   // that we have detected an RTC failure
-									   // and are handling the event
-
-		 // Do something...RTC Has Stopped Oscillating
-		 while(1);                     // <Insert Handler Code Here>
-	  }
+//	  //-----------------------------------------------------------------------
+//	  // Task #1 - Handle RTC Failure
+//	  //-----------------------------------------------------------------------
+//	  if(RTC_Failure)
+//	  {
+//		 RTC_Failure = 0;              // Reset RTC Failure Flag to indicate
+//									   // that we have detected an RTC failure
+//									   // and are handling the event
+//
+//		 // Do something...RTC Has Stopped Oscillating
+//		 while(1);                     // <Insert Handler Code Here>
+//	  }
 
 
 	  //-----------------------------------------------------------------------
 	  // Task #2 - Handle RTC Alarm
 	  //-----------------------------------------------------------------------
-	  if(RTC_Alarm)
-	  {
-
-		 RTC_Alarm = 0;                // Reset RTC Alarm Flag to indicate
+//	  if(RTC_Alarm)
+//	  {
+//
+//		 RTC_Alarm = 0;                // Reset RTC Alarm Flag to indicate
 									   // that we have detected an alarm
 									   // and are handling the alarm event
 
-		 isStim = !isStim;       // Change stimulation state
+		 //isStim = !isStim;       // Change stimulation state
 		 // Stimulation state. Stay awake.
-     if (isStim) {
+     //if (isStim) {
          MUX36S16_output(channel_nr);    // Select the stimulation channel based on the NFC reading
          Stim_Sequence(PW, T);
-     }
-     if(PMU0CF & RTCAWK) RTC_Alarm = 1;
-     if(PMU0CF & RTCFWK) RTC_Failure = 1;
+     //}
+//     if(PMU0CF & RTCAWK) RTC_Alarm = 1;
+//     if(PMU0CF & RTCFWK) RTC_Failure = 1;
 		 //RTC_SleepTicks(500);   // Sleep for T_on ms
 		 //RTC_Alarm = 1;
 	  }
@@ -214,18 +214,17 @@ int main (void)
 	  //LPM(SLEEP);                      // Enter Sleep Until Next Alarm
 
 
-	}
 }
 
 void Stim_Sequence(uint16_t PW, uint16_t T) {
-  Polarity(0); // start shunted
+  //Polarity(0); // start shunted
   Polarity(1);// Forward polarity
   Pulse_On();
   //T0_Waitus(PW);
-  T0_Waitus(1);
+  T2_Waitus(1);
   // (-) phase for next PW * 50 us
   Pulse_Off();
-
+  Polarity(0);
 
 
   // Shunt and reverse
@@ -329,9 +328,10 @@ void T2_Waitus (uint16_t us) {
       // Stop Timer
       TMR2CN0 &= ~(TMR2CN0_TR2__BMASK);
       TMR2RLH = (0xFF << TMR2RLH_TMR2RLH__SHIFT); // Reload high byte 0xFF
-      TMR2RLL = (0xC2 << TMR2RLL_TMR2RLL__SHIFT); // Reload low byte 0xF8
+      TMR2RLL = (0x83 << TMR2RLL_TMR2RLL__SHIFT); // Reload low byte 0xF8
       TMR2CN0 |= TMR2CN0_TR2__RUN; // start timer 2
-      while ((!TMR2CN0_TF2L) || (!TMR2CN0_TF2H));                    // Wait for overflow (low byte)
+      //while ((!TMR2CN0_TF2L) || (!TMR2CN0_TF2H));                    // Wait for overflow (low byte)
+      while (!TMR2CN0_TF2H);
       us--;                            // Update us counter
   }
   TMR2CN0 &= ~(TMR2CN0_TR2__BMASK); // stop timer 2
@@ -406,10 +406,12 @@ void SMB_Read (void)
  * 1 1 1 1 1 Channel 16
  */
 void MUX36S16_output(uint8_t mux36s16_state){
+  IE_EA = 0;
   P17 = (mux36s16_state & (1 << (1-1))) ? 1 : 0; // Get 1st bit of MUX36S16 state byte
   P16 = (mux36s16_state & (1 << (2-1))) ? 1 : 0; // Get 2nd bit of the state byte
   P15 = (mux36s16_state & (1 << (3-1))) ? 1 : 0; // Get 3rd bit of the state byte
   P14 = (mux36s16_state & (1 << (4-1))) ? 1 : 0; // Get 4th bit of the state byte
+  IE_EA = 1;
 }
 
 /*
@@ -449,9 +451,11 @@ void check_channel()
  * 1  1   1   1   Channels 8A and 8B
  */
 void MUX36D08_output(uint8_t mux36d08_state){
+  IE_EA = 0;
   P02 = (mux36d08_state & (1 << (1-1))) ? 1 : 0; // Get 1st bit of MUX36D08 state byte
   P03 = (mux36d08_state & (1 << (2-1))) ? 1 : 0; // Get 2nd bit of the state byte
   P04 = (mux36d08_state & (1 << (3-1))) ? 1 : 0; // Get 3rd bit of the state byte
+  IE_EA = 0;
 }
 
 /*
