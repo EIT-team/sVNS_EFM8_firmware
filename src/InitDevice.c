@@ -130,6 +130,7 @@ enter_DefaultMode_from_smbus_reset (void)
   // $[Config Calls]
   // Save the SFRPAGE
   uint8_t SFRPAGE_save = SFRPAGE;
+  PCA_0_enter_DefaultMode_from_smbus_reset ();
   PORTS_0_enter_DefaultMode_from_smbus_reset ();
   PORTS_1_enter_DefaultMode_from_smbus_reset ();
   PBCFG_0_enter_DefaultMode_from_smbus_reset ();
@@ -417,10 +418,10 @@ CLOCK_0_enter_DefaultMode_from_smbus_reset (void)
 {
   // $[CLKSEL - Clock Select]
   /***********************************************************************
-   - SYSCLK is equal to selected clock source divided by 8
+   - SYSCLK is equal to selected clock source divided by 2
    - Clock derived from the Internal Low Power Oscillator
    ***********************************************************************/
-  CLKSEL = CLKSEL_CLKDIV__SYSCLK_DIV_8 | CLKSEL_CLKSL__LPOSC;
+  CLKSEL = CLKSEL_CLKDIV__SYSCLK_DIV_2 | CLKSEL_CLKSL__LPOSC;
   // Wait for the clock to be ready
   while ((CLKSEL & CLKSEL_CLKRDY__BMASK) != CLKSEL_CLKRDY__SET)
     ;
@@ -490,16 +491,16 @@ TIMER16_2_enter_DefaultMode_from_smbus_reset (void)
 
   // $[TMR2RLH - Timer 2 Reload High Byte]
   /***********************************************************************
-   - Timer 2 Reload High Byte = 0xFF
+   - Timer 2 Reload High Byte = 0xFE
    ***********************************************************************/
-  TMR2RLH = (0xFF << TMR2RLH_TMR2RLH__SHIFT);
+  TMR2RLH = (0xFE << TMR2RLH_TMR2RLH__SHIFT);
   // [TMR2RLH - Timer 2 Reload High Byte]$
 
   // $[TMR2RLL - Timer 2 Reload Low Byte]
   /***********************************************************************
-   - Timer 2 Reload Low Byte = 0x83
+   - Timer 2 Reload Low Byte = 0x0C
    ***********************************************************************/
-  TMR2RLL = (0x83 << TMR2RLL_TMR2RLL__SHIFT);
+  TMR2RLL = (0x0C << TMR2RLL_TMR2RLL__SHIFT);
   // [TMR2RLL - Timer 2 Reload Low Byte]$
 
   // $[TMR2CN0]
@@ -743,16 +744,16 @@ TIMER16_3_enter_DefaultMode_from_smbus_reset (void)
 
   // $[TMR3RLH - Timer 3 Reload High Byte]
   /***********************************************************************
-   - Timer 3 Reload High Byte = 0xFF
+   - Timer 3 Reload High Byte = 0xFE
    ***********************************************************************/
-  TMR3RLH = (0xFF << TMR3RLH_TMR3RLH__SHIFT);
+  TMR3RLH = (0xFE << TMR3RLH_TMR3RLH__SHIFT);
   // [TMR3RLH - Timer 3 Reload High Byte]$
 
   // $[TMR3RLL - Timer 3 Reload Low Byte]
   /***********************************************************************
-   - Timer 3 Reload Low Byte = 0x83
+   - Timer 3 Reload Low Byte = 0x0C
    ***********************************************************************/
-  TMR3RLL = (0x83 << TMR3RLL_TMR3RLL__SHIFT);
+  TMR3RLL = (0x0C << TMR3RLL_TMR3RLL__SHIFT);
   // [TMR3RLL - Timer 3 Reload Low Byte]$
 
   // $[TMR3CN0]

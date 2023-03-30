@@ -217,7 +217,7 @@ int main (void)
 }
 
 void Stim_Sequence(uint16_t PW, uint16_t T) {
-  //Polarity(0); // start shunted
+  Polarity(0); // start shunted
   Polarity(1);// Forward polarity
   Pulse_On();
   //T0_Waitus(PW);
@@ -225,7 +225,11 @@ void Stim_Sequence(uint16_t PW, uint16_t T) {
   // (-) phase for next PW * 50 us
   Pulse_Off();
   Polarity(0);
-
+  Polarity(2);
+  Pulse_On();
+  T0_Waitus(1);
+  Pulse_Off();
+  Polarity(0);
 
   // Shunt and reverse
   //Polarity(0);// Shunted
@@ -240,7 +244,7 @@ void Stim_Sequence(uint16_t PW, uint16_t T) {
   // Sample op amp output
   // sampleADC();
   //T0_Waitus(T - 2 * PW); // Wait for the remaining duration of the period
-  //T0_Waitus(900);
+  T0_Waitus(900);
 }
 
 
@@ -251,7 +255,7 @@ void Stim_Sequence(uint16_t PW, uint16_t T) {
  * --------------------
  * Sets MUX36D08 switch polarity.
  */
-void Polarity(char polar) {
+void Polarity(uint8_t polar) {
   switch (polar) {
   case 1: // Forward polarity
     MUX36D08_output(0x01);
@@ -302,8 +306,8 @@ void T0_Waitus (uint16_t us)
       //TH0 = (0xFF << TH0_TH0__SHIFT);
 
 
-      TH0 = (0xFF << TH0_TH0__SHIFT);
-      TL0 = (0xE1 << TL0_TL0__SHIFT);
+      TH0 = (0xFD << TH0_TH0__SHIFT); // 0xFE
+      TL0 = (0xF2 << TL0_TL0__SHIFT); // 0x4C
 
       //TL0 = ((-SYSCLK/1000) & 0xFF);
       //TL0 = (0xE1 << TL0_TL0__SHIFT);
