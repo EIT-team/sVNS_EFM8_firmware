@@ -218,27 +218,30 @@ int main (void)
 }
 
 void Stim_Sequence(uint16_t PW, uint16_t T) {
-  //Polarity(0); // start shunted
+  Polarity(0); // start shunted
   Polarity(1);// Forward polarity
   Pulse_On();
   //T0_Waitus(PW);
   T0_Waitus(1);
   // (-) phase for next PW * 50 us
   Pulse_Off();
+
+
+
   // Shunt and reverse
   //Polarity(0);// Shunted
-  Polarity(2);// Reverse
-  Pulse_On();
+  //Polarity(2);// Reverse
+  //Pulse_On();
   //T0_Waitus(PW);
-  T0_Waitus(1);
+  //T0_Waitus(1);
   // (+) phase for next PW * 50 us
   // 2* PW * 50 us passed, stop stimulation
   //Polarity(0);// Shunted
-  Pulse_Off();
+  //Pulse_Off();
   // Sample op amp output
   // sampleADC();
   //T0_Waitus(T - 2 * PW); // Wait for the remaining duration of the period
-  T0_Waitus(900);
+  //T0_Waitus(900);
 }
 
 
@@ -297,9 +300,14 @@ void T0_Waitus (uint16_t us)
       TCON_TR0 = 0;                         // Stop Timer0
       //TH0 = ((-SYSCLK/1000) >> 8);     // Overflow in 1ms
       // Overflow in 0xFC18 (64536) cycles, which for the 20 MHz is 50 us.
+      //TH0 = (0xFF << TH0_TH0__SHIFT);
+
+
       TH0 = (0xFF << TH0_TH0__SHIFT);
-      //TL0 = ((-SYSCLK/1000) & 0xFF);
       TL0 = (0xE1 << TL0_TL0__SHIFT);
+
+      //TL0 = ((-SYSCLK/1000) & 0xFF);
+      //TL0 = (0xE1 << TL0_TL0__SHIFT);
       TCON_TF0 = 0;                         // Clear overflow indicator
       TCON_TR0 = 1;                         // Start Timer0
       while (!TCON_TF0);                    // Wait for overflow
@@ -321,7 +329,7 @@ void T2_Waitus (uint16_t us) {
       // Stop Timer
       TMR2CN0 &= ~(TMR2CN0_TR2__BMASK);
       TMR2RLH = (0xFF << TMR2RLH_TMR2RLH__SHIFT); // Reload high byte 0xFF
-      TMR2RLL = (0xE1 << TMR2RLL_TMR2RLL__SHIFT); // Reload low byte 0xF8
+      TMR2RLL = (0xC2 << TMR2RLL_TMR2RLL__SHIFT); // Reload low byte 0xF8
       TMR2CN0 |= TMR2CN0_TR2__RUN; // start timer 2
       while ((!TMR2CN0_TF2L) || (!TMR2CN0_TF2H));                    // Wait for overflow (low byte)
       us--;                            // Update us counter

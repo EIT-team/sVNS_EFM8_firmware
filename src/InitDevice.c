@@ -419,10 +419,10 @@ CLOCK_0_enter_DefaultMode_from_smbus_reset (void)
 {
   // $[CLKSEL - Clock Select]
   /***********************************************************************
-   - SYSCLK is equal to selected clock source divided by 32
+   - SYSCLK is equal to selected clock source divided by 16
    - Clock derived from the Internal Low Power Oscillator
    ***********************************************************************/
-  CLKSEL = CLKSEL_CLKDIV__SYSCLK_DIV_32 | CLKSEL_CLKSL__LPOSC;
+  CLKSEL = CLKSEL_CLKDIV__SYSCLK_DIV_16 | CLKSEL_CLKSL__LPOSC;
   // Wait for the clock to be ready
   while ((CLKSEL & CLKSEL_CLKRDY__BMASK) != CLKSEL_CLKRDY__SET)
     ;
@@ -507,9 +507,9 @@ TIMER16_2_enter_DefaultMode_from_smbus_reset (void)
 
   // $[TMR2RLL - Timer 2 Reload Low Byte]
   /***********************************************************************
-   - Timer 2 Reload Low Byte = 0xE1
+   - Timer 2 Reload Low Byte = 0xC2
    ***********************************************************************/
-  TMR2RLL = (0xE1 << TMR2RLL_TMR2RLL__SHIFT);
+  TMR2RLL = (0xC2 << TMR2RLL_TMR2RLL__SHIFT);
   // [TMR2RLL - Timer 2 Reload Low Byte]$
 
   // $[TMR2CN0]
@@ -758,9 +758,9 @@ TIMER16_3_enter_DefaultMode_from_smbus_reset (void)
 
   // $[TMR3RLL - Timer 3 Reload Low Byte]
   /***********************************************************************
-   - Timer 3 Reload Low Byte = 0xE1
+   - Timer 3 Reload Low Byte = 0xC2
    ***********************************************************************/
-  TMR3RLL = (0xE1 << TMR3RLL_TMR3RLL__SHIFT);
+  TMR3RLL = (0xC2 << TMR3RLL_TMR3RLL__SHIFT);
   // [TMR3RLL - Timer 3 Reload Low Byte]$
 
   // $[TMR3CN0]

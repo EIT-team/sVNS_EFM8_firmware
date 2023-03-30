@@ -14,7 +14,7 @@
     <property object="ADC_0" propertyId="adc.windowcompare.lessthanlowbyte" value="7"/>
     <property object="ADC_0" propertyId="adc.windowcompare.lessthanvalue" value="775"/>
     <property object="CLOCK_0" propertyId="ABPeripheral.included" value="true"/>
-    <property object="CLOCK_0" propertyId="clock.clockselect.clocksourcedivider" value="SYSCLK / 32"/>
+    <property object="CLOCK_0" propertyId="clock.clockselect.clocksourcedivider" value="SYSCLK / 16"/>
     <property object="CLOCK_0" propertyId="clock.clockselect.selectclocksource" value="Low-Power Oscillator"/>
     <property object="CROSSBAR0" propertyId="xbar0.smbus0.clockdata" value="Enabled"/>
     <property object="DefaultMode" propertyId="mode.diagramLocation" value="100, 100"/>
@@ -70,9 +70,9 @@
     <property object="P1.7" propertyId="ports.settings.skip" value="Skipped"/>
     <property object="PBCFG_0" propertyId="pbcfg.settings.enablecrossbar" value="Enabled"/>
     <property object="PCA_0" propertyId="ABPeripheral.included" value="true"/>
-    <property object="PCA_0" propertyId="pca.pcacountertimerconfiguration.pcaclockfrequency" value="52.083 kHz"/>
-    <property object="PCA_0" propertyId="pca.pcacountertimerconfiguration.pcaclockfrequencyintegervalue" value="52083.3333333"/>
-    <property object="PCA_0" propertyId="pca.pcacountertimerconfiguration.pcaclockperiod" value="19.200 us"/>
+    <property object="PCA_0" propertyId="pca.pcacountertimerconfiguration.pcaclockfrequency" value="104.167 kHz"/>
+    <property object="PCA_0" propertyId="pca.pcacountertimerconfiguration.pcaclockfrequencyintegervalue" value="104166.666667"/>
+    <property object="PCA_0" propertyId="pca.pcacountertimerconfiguration.pcaclockperiod" value="9.600 us"/>
     <property object="PCA_0" propertyId="pca.pcastartrun.pcacountertimerrunstatus" value="Stopped"/>
     <property object="PCA_0" propertyId="pca.watchdogcontrol.enablewatchdogtimer" value="Disabled"/>
     <property object="RSTSRC_0" propertyId="ABPeripheral.included" value="true"/>
@@ -109,15 +109,15 @@
     <property object="TIMER16_2" propertyId="timer16.control.runcontrol" value="Start"/>
     <property object="TIMER16_2" propertyId="timer16.control.timerrunningstate" value="Timer is Running"/>
     <property object="TIMER16_2" propertyId="timer16.initandreloadvalue.targetoverflowfrequency" value="20000"/>
-    <property object="TIMER16_2" propertyId="timer16.initandreloadvalue.timerreloadvalue" value="65505"/>
+    <property object="TIMER16_2" propertyId="timer16.initandreloadvalue.timerreloadvalue" value="65474"/>
     <property object="TIMER16_2" propertyId="timer16.reloadhighbyte.reloadhighbyte" value="255"/>
-    <property object="TIMER16_2" propertyId="timer16.reloadlowbyte.reloadlowbyte" value="225"/>
+    <property object="TIMER16_2" propertyId="timer16.reloadlowbyte.reloadlowbyte" value="194"/>
     <property object="TIMER16_3" propertyId="ABPeripheral.included" value="true"/>
     <property object="TIMER16_3" propertyId="timer16.control.clocksource" value="SYSCLK"/>
     <property object="TIMER16_3" propertyId="timer16.initandreloadvalue.targetoverflowfrequency" value="20000"/>
-    <property object="TIMER16_3" propertyId="timer16.initandreloadvalue.timerreloadvalue" value="65505"/>
+    <property object="TIMER16_3" propertyId="timer16.initandreloadvalue.timerreloadvalue" value="65474"/>
     <property object="TIMER16_3" propertyId="timer16.reloadhighbyte.reloadhighbyte" value="255"/>
-    <property object="TIMER16_3" propertyId="timer16.reloadlowbyte.reloadlowbyte" value="225"/>
+    <property object="TIMER16_3" propertyId="timer16.reloadlowbyte.reloadlowbyte" value="194"/>
     <property object="TIMER_SETUP_0" propertyId="ABPeripheral.included" value="true"/>
     <property object="TIMER_SETUP_0" propertyId="timer_setup.clockcontrol.timer0clockselect" value="Use SYSCLK"/>
     <property object="TIMER_SETUP_0" propertyId="timer_setup.clockcontrol.timer2lowbyteclockselect" value="Use SYSCLK"/>
