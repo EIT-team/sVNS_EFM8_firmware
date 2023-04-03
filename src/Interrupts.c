@@ -17,9 +17,6 @@ bool SA_sent = 0;
 bool SA_read_sent = 0;
 bool MEMA_sent = 0;
 bool Read_Init = 0;
-//extern PW;
-//extern T;
-//extern void Stim_Sequence(uint16_t, uint16_t);
 
 //-----------------------------------------------------------------------------
 // SMBUS0_ISR
@@ -169,18 +166,3 @@ SI_INTERRUPT (SMBUS0_ISR, SMBUS0_IRQn)
       }
     SMB0CN0_SI = 0;                             // Clear interrupt flag
   }
-
-//-----------------------------------------------------------------------------
-// TIMER2_ISR
-//-----------------------------------------------------------------------------
-//
-// TIMER2 ISR Content goes here. Remember to clear flag bits:
-// TMR2CN0::TF2H (Timer # High Byte Overflow Flag)
-// TMR2CN0::TF2L (Timer # Low Byte Overflow Flag)
-//
-//-----------------------------------------------------------------------------
-SI_INTERRUPT (TIMER2_ISR, TIMER2_IRQn)
-  {
-    //Stim_Sequence(PW, T);
-  }
-

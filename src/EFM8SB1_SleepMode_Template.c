@@ -45,12 +45,7 @@ uint8_t Iset;           // Set IREF current reference value, 0-63 (decimal) / 0 
 uint8_t mode;           // Stimulation mode. 1 for multichannel scan, 2 for singlechannel uninterrupted stimulation
 uint8_t channel_nr;     // Preset channel number for the single-channel stimulation
 uint16_t T_on;           // Stimulation time on and off, seconds
-//uint8_t T_on_alarm_0;
-//uint8_t T_on_alarm_1;
-//uint8_t T_on_alarm_2;
 bool On;                // Voltage converter and 20V plane switch -> Switches stimulation circuit
-// uint8_t Protocol;       // Protocol type, 0 - Biphasic pulmonary, 1 - Biphasic laryngeal, 2 - Biphasic general uninterrupted, 3 - Monophasic
-// Used in workflow:
 bool isStim = 0;        // Stimulation on/off status for the sleep mode initiation
 
 // Stimulation function prototypes
@@ -60,8 +55,7 @@ void T2_Waitus(uint16_t);
 void Pulse_On(void);
 void Pulse_Off(void);
 void Stim_Sequence(uint16_t, uint16_t);
-void Biphasic_protocol(void);
-void Biphasic_protocol_single_channel(void);
+
 
 // I2C
 // P0.0 - SMBus SDA
@@ -132,12 +126,6 @@ int main (void)
   }
   // Initialize normal operation
   enter_DefaultMode_from_smbus_reset ();
-	//RTC0CN0_Local = 0xC0;                // Initialize Local Copy of RTC0CN0
-	//RTC_WriteAlarm(WAKE_INTERVAL_TICKS);// Set the Alarm Value
-	//RTC0CN0_SetBits(RTC0TR+RTC0AEN+ALRM);// Enable Counter, Alarm, and Auto-Reset
-
-	//LPM_Init();                         // Initialize Power Management
-	//LPM_Enable_Wakeup(RTC);
 
   // Read data-stimulation parameters from NT3H via I2C
   TARGET = SLAVE_ADDR;         // NT3H slave address, 0xAA for NT3H
@@ -147,73 +135,35 @@ int main (void)
   }
   PW_HB = SAVE[0]; // Pulse Width in chunks of 50 us high byte
   PW_LB = SAVE[1]; // Pulse Width in chunks of 50 us low byte
-//  PW_LB = 1; // Hardcode for the broken NFC
   T_HB = SAVE[2]; // Period high byte
   T_LB = SAVE[3]; // Period frequency low byte
-//  T_on_alarm_0 = SAVE[4];    // Stimulation protcol time on/off
-//  T_on_alarm_1 = SAVE[5];
-//  T_on_alarm_2 = SAVE[6];
   On = SAVE[7];
   Iset = SAVE[8];     // IREF current value, remember 0x3F is maximum, 0.5 mA reference current
   mode = SAVE[9];     // Stimulation mode. 1 - Channel scanning; 2 - Single channel stimulation
   channel_nr = SAVE[10];
-//  channel_nr = 0; // Hardcode for the broken NFC
   check_channel(); // checks if user wants channel 14 or 15 (channel 14 is skipped in MUX36S16)
+
   // Set the device according to read values
   P05 = On;              // Enable or disable LT8410, enable MUX36D08 and 2x MUX36S16
   PW = (PW_HB<<8)|(PW_LB); // Combine PW into single hex
   T = (T_HB<<8)|(T_LB); // Combine pulse period into single hex
-  //RTC_Alarm = 1; // first iteration
+
+  // RTC setup
+  RTC0CN0_Local = 0xC0;                // Initialize Local Copy of RTC0CN0
+  RTC_WriteAlarm(WAKE_INTERVAL_TICKS);// Set the Alarm Value
+  RTC0CN0_SetBits(RTC0TR+RTC0AEN+ALRM);// Enable Counter, Alarm, and Auto-Reset
+
+  LPM_Init();                         // Initialize Power Management
+  LPM_Enable_Wakeup(RTC);
 	//----------------------------------
 	// Main Application Loop
 	//----------------------------------
-	while (1)
+
+  while (1)
 	{
-
-//	  //-----------------------------------------------------------------------
-//	  // Task #1 - Handle RTC Failure
-//	  //-----------------------------------------------------------------------
-//	  if(RTC_Failure)
-//	  {
-//		 RTC_Failure = 0;              // Reset RTC Failure Flag to indicate
-//									   // that we have detected an RTC failure
-//									   // and are handling the event
-//
-//		 // Do something...RTC Has Stopped Oscillating
-//		 while(1);                     // <Insert Handler Code Here>
-//	  }
-
-
-	  //-----------------------------------------------------------------------
-	  // Task #2 - Handle RTC Alarm
-	  //-----------------------------------------------------------------------
-//	  if(RTC_Alarm)
-//	  {
-//
-//		 RTC_Alarm = 0;                // Reset RTC Alarm Flag to indicate
-									   // that we have detected an alarm
-									   // and are handling the alarm event
-
-		 //isStim = !isStim;       // Change stimulation state
-		 // Stimulation state. Stay awake.
-     //if (isStim) {
-         MUX36S16_output(channel_nr);    // Select the stimulation channel based on the NFC reading
-         Stim_Sequence(PW, T);
-     //}
-//     if(PMU0CF & RTCAWK) RTC_Alarm = 1;
-//     if(PMU0CF & RTCFWK) RTC_Failure = 1;
-		 //RTC_SleepTicks(500);   // Sleep for T_on ms
-		 //RTC_Alarm = 1;
+   MUX36S16_output(channel_nr);    // Select the stimulation channel based on the NFC reading
+   Stim_Sequence(PW, T);
 	  }
-
-	  //-----------------------------------------------------------------------
-	  // Task #3 - Sleep for the remainder of the interval
-	  //-----------------------------------------------------------------------
-
-	  // Place the device in Sleep Mode
-	  //LPM(SLEEP);                      // Enter Sleep Until Next Alarm
-
-
 }
 
 void Stim_Sequence(uint16_t PW, uint16_t T) {
@@ -221,30 +171,17 @@ void Stim_Sequence(uint16_t PW, uint16_t T) {
   Polarity(1);// Forward polarity
   Pulse_On();
   //T0_Waitus(PW);
-  T0_Waitus(1);
+  T0_Waitus(PW);
   // (-) phase for next PW * 50 us
   Pulse_Off();
   Polarity(0);
   Polarity(2);
   Pulse_On();
-  T0_Waitus(1);
+  T0_Waitus(PW);
   Pulse_Off();
   Polarity(0);
 
-  // Shunt and reverse
-  //Polarity(0);// Shunted
-  //Polarity(2);// Reverse
-  //Pulse_On();
-  //T0_Waitus(PW);
-  //T0_Waitus(1);
-  // (+) phase for next PW * 50 us
-  // 2* PW * 50 us passed, stop stimulation
-  //Polarity(0);// Shunted
-  //Pulse_Off();
-  // Sample op amp output
-  // sampleADC();
-  //T0_Waitus(T - 2 * PW); // Wait for the remaining duration of the period
-  T0_Waitus(900);
+  T0_Waitus(T);
 }
 
 
@@ -306,8 +243,8 @@ void T0_Waitus (uint16_t us)
       //TH0 = (0xFF << TH0_TH0__SHIFT);
 
 
-      TH0 = (0xFD << TH0_TH0__SHIFT); // 0xFE
-      TL0 = (0xF2 << TL0_TL0__SHIFT); // 0x4C
+      TH0 = (0xFE << TH0_TH0__SHIFT); // 0xFD
+      TL0 = (0x0B << TL0_TL0__SHIFT); // 0xF2
 
       //TL0 = ((-SYSCLK/1000) & 0xFF);
       //TL0 = (0xE1 << TL0_TL0__SHIFT);

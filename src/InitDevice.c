@@ -350,8 +350,19 @@ RTC_0_enter_DefaultMode_from_smbus_reset (void)
   RTC0ADR = RTC0XCN0;
   RTC0DAT = RTC0XCN0_XMODE__SELF_OSCILLATE | RTC0XCN0_AGCEN__ENABLED
       | RTC0XCN0_BIASX2__DISABLED | RTC0XCN0_LFOEN__ENABLED;
-  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
-    ;    //Poll Busy Bit
+  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET);    //Poll Busy Bit
+
+  // [RTC0XCN - RTC Oscillator Control]$
+
+  // $[RTC0XCF - RTC Oscillator Configuration]
+  /*
+  // AUTOSTP (Automatic Load Capacitance Stepping Enable) = DISABLED
+  //     (Disable load capacitance stepping.)
+  // LOADCAP (Load Capacitance Programmed Value) = 0x00
+  */
+  RTC0ADR = RTC0XCF;
+  RTC0DAT = RTC0XCF_AUTOSTP__DISABLED | (0x00 << RTC0XCF_LOADCAP__SHIFT);
+  while((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET);    //Poll Busy Bit
   // [RTC0XCN - RTC Oscillator Control]$
 
   // $[RTC0XCF - RTC Oscillator Configuration]
@@ -389,23 +400,23 @@ RTC_0_enter_DefaultMode_from_smbus_reset (void)
   // [ALARM3 - RTC Alarm Programmed Value 3]$
 
   // $[RTC0CN - RTC Control]
-  /***********************************************************************
-   - Enable RTC oscillator
-   - RTC timer is running
-   - Enable missing RTC detector
-   - Enable RTC alarm
-   - Alarm event flag is not set or disable the auto reset function
-   - Do not start a capture operation
-   - Do not start a set operation
-   ***********************************************************************/
+  /*
+  // RTC0EN (RTC Enable) = ENABLED (Enable RTC oscillator.)
+  // RTC0TR (RTC Timer Run Control) = RUN (RTC timer is running.)
+  // MCLKEN (Missing RTC Detector Enable) = ENABLED (Enable missing RTC
+  //     detector.)
+  // RTC0AEN (RTC Alarm Enable) = ENABLED (Enable RTC alarm.)
+  // ALRM (RTC Alarm Event Flag and Auto Reset Enable) = SET (Alarm event
+  //     flag is set or enable the auto reset function.)
+  // RTC0CAP (RTC Timer Capture) = NOT_SET (Do not start a capture
+  //     operation.)
+  // RTC0SET (RTC Timer Set) = NOT_SET (Do not start a set operation.)
+  */
   RTC0ADR = RTC0CN0;
-  RTC0DAT = RTC0CN0_RTC0EN__ENABLED | RTC0CN0_RTC0TR__RUN
-      | RTC0CN0_MCLKEN__ENABLED | RTC0CN0_RTC0AEN__ENABLED
-      | RTC0CN0_ALRM__NOT_SET | RTC0CN0_RTC0CAP__NOT_SET
-      | RTC0CN0_RTC0SET__NOT_SET;
-  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
-    ;    //Poll Busy Bit
-
+  RTC0DAT = RTC0CN0_RTC0EN__ENABLED | RTC0CN0_RTC0TR__RUN | RTC0CN0_MCLKEN__ENABLED
+     | RTC0CN0_RTC0AEN__ENABLED | RTC0CN0_ALRM__SET | RTC0CN0_RTC0CAP__NOT_SET
+     | RTC0CN0_RTC0SET__NOT_SET;
+  while((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET);    //Poll Busy Bit
   // [RTC0CN - RTC Control]$
 
   // $[External Oscillator Setup]
