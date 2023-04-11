@@ -169,6 +169,10 @@ int main (void)
 
   while (1)
 	{
+      // check the mode
+
+
+
       if (isStim) {
    // what's the best place to set the channel?
    //MUX36S16_output(channel_nr);    // Select the stimulation channel based on the NFC reading

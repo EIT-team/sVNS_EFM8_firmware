@@ -197,7 +197,7 @@ SI_INTERRUPT (TIMER2_ISR, TIMER2_IRQn)
         }
     }
     if (secondsPassed == T_on) { // target pulse train period achieved
-        channel_nr ++; check_channel();
+        //channel_nr ++; check_channel();
 
         MUX36S16_output(channel_nr); // set the output channel once the timer achieved
         secondsPassed = 0; // reset the timer
