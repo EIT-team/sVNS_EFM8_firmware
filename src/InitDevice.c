@@ -140,7 +140,6 @@ enter_DefaultMode_from_smbus_reset (void)
   TIMER16_2_enter_DefaultMode_from_smbus_reset ();
   TIMER16_3_enter_DefaultMode_from_smbus_reset ();
   TIMER_SETUP_0_enter_DefaultMode_from_smbus_reset ();
-  ADC_0_enter_DefaultMode_from_smbus_reset ();
   IREF_0_enter_DefaultMode_from_smbus_reset ();
   SMBUS_0_enter_DefaultMode_from_smbus_reset ();
   INTERRUPT_0_enter_DefaultMode_from_smbus_reset ();
@@ -350,19 +349,21 @@ RTC_0_enter_DefaultMode_from_smbus_reset (void)
   RTC0ADR = RTC0XCN0;
   RTC0DAT = RTC0XCN0_XMODE__SELF_OSCILLATE | RTC0XCN0_AGCEN__ENABLED
       | RTC0XCN0_BIASX2__DISABLED | RTC0XCN0_LFOEN__ENABLED;
-  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET);    //Poll Busy Bit
+  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
+    ;    //Poll Busy Bit
 
   // [RTC0XCN - RTC Oscillator Control]$
 
   // $[RTC0XCF - RTC Oscillator Configuration]
   /*
-  // AUTOSTP (Automatic Load Capacitance Stepping Enable) = DISABLED
-  //     (Disable load capacitance stepping.)
-  // LOADCAP (Load Capacitance Programmed Value) = 0x00
-  */
+   // AUTOSTP (Automatic Load Capacitance Stepping Enable) = DISABLED
+   //     (Disable load capacitance stepping.)
+   // LOADCAP (Load Capacitance Programmed Value) = 0x00
+   */
   RTC0ADR = RTC0XCF;
   RTC0DAT = RTC0XCF_AUTOSTP__DISABLED | (0x00 << RTC0XCF_LOADCAP__SHIFT);
-  while((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET);    //Poll Busy Bit
+  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
+    ;    //Poll Busy Bit
   // [RTC0XCN - RTC Oscillator Control]$
 
   // $[RTC0XCF - RTC Oscillator Configuration]
@@ -401,22 +402,23 @@ RTC_0_enter_DefaultMode_from_smbus_reset (void)
 
   // $[RTC0CN - RTC Control]
   /*
-  // RTC0EN (RTC Enable) = ENABLED (Enable RTC oscillator.)
-  // RTC0TR (RTC Timer Run Control) = RUN (RTC timer is running.)
-  // MCLKEN (Missing RTC Detector Enable) = ENABLED (Enable missing RTC
-  //     detector.)
-  // RTC0AEN (RTC Alarm Enable) = ENABLED (Enable RTC alarm.)
-  // ALRM (RTC Alarm Event Flag and Auto Reset Enable) = SET (Alarm event
-  //     flag is set or enable the auto reset function.)
-  // RTC0CAP (RTC Timer Capture) = NOT_SET (Do not start a capture
-  //     operation.)
-  // RTC0SET (RTC Timer Set) = NOT_SET (Do not start a set operation.)
-  */
+   // RTC0EN (RTC Enable) = ENABLED (Enable RTC oscillator.)
+   // RTC0TR (RTC Timer Run Control) = RUN (RTC timer is running.)
+   // MCLKEN (Missing RTC Detector Enable) = ENABLED (Enable missing RTC
+   //     detector.)
+   // RTC0AEN (RTC Alarm Enable) = ENABLED (Enable RTC alarm.)
+   // ALRM (RTC Alarm Event Flag and Auto Reset Enable) = SET (Alarm event
+   //     flag is set or enable the auto reset function.)
+   // RTC0CAP (RTC Timer Capture) = NOT_SET (Do not start a capture
+   //     operation.)
+   // RTC0SET (RTC Timer Set) = NOT_SET (Do not start a set operation.)
+   */
   RTC0ADR = RTC0CN0;
-  RTC0DAT = RTC0CN0_RTC0EN__ENABLED | RTC0CN0_RTC0TR__RUN | RTC0CN0_MCLKEN__ENABLED
-     | RTC0CN0_RTC0AEN__ENABLED | RTC0CN0_ALRM__SET | RTC0CN0_RTC0CAP__NOT_SET
-     | RTC0CN0_RTC0SET__NOT_SET;
-  while((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET);    //Poll Busy Bit
+  RTC0DAT = RTC0CN0_RTC0EN__ENABLED | RTC0CN0_RTC0TR__RUN
+      | RTC0CN0_MCLKEN__ENABLED | RTC0CN0_RTC0AEN__ENABLED | RTC0CN0_ALRM__SET
+      | RTC0CN0_RTC0CAP__NOT_SET | RTC0CN0_RTC0SET__NOT_SET;
+  while ((RTC0ADR & RTC0ADR_BUSY__BMASK) == RTC0ADR_BUSY__SET)
+    ;    //Poll Busy Bit
   // [RTC0CN - RTC Control]$
 
   // $[External Oscillator Setup]
@@ -502,23 +504,19 @@ TIMER16_2_enter_DefaultMode_from_smbus_reset (void)
 
   // $[TMR2RLH - Timer 2 Reload High Byte]
   /***********************************************************************
-   - Timer 2 Reload High Byte = 0xFE
+   - Timer 2 Reload High Byte = 0xBE
    ***********************************************************************/
-  TMR2RLH = (0xFE << TMR2RLH_TMR2RLH__SHIFT);
+  TMR2RLH = (0xBE << TMR2RLH_TMR2RLH__SHIFT);
   // [TMR2RLH - Timer 2 Reload High Byte]$
 
   // $[TMR2RLL - Timer 2 Reload Low Byte]
   /***********************************************************************
-   - Timer 2 Reload Low Byte = 0x0C
+   - Timer 2 Reload Low Byte = 0xE5
    ***********************************************************************/
-  TMR2RLL = (0x0C << TMR2RLL_TMR2RLL__SHIFT);
+  TMR2RLL = (0xE5 << TMR2RLL_TMR2RLL__SHIFT);
   // [TMR2RLL - Timer 2 Reload Low Byte]$
 
   // $[TMR2CN0]
-  /***********************************************************************
-   - Start Timer 2 running
-   ***********************************************************************/
-  TMR2CN0 |= TMR2CN0_TR2__RUN;
   // [TMR2CN0]$
 
   // $[Timer Restoration]
@@ -536,13 +534,13 @@ TIMER_SETUP_0_enter_DefaultMode_from_smbus_reset (void)
    - System clock divided by 4
    - Counter/Timer 0 uses the system clock
    - Timer 2 high byte uses the clock defined by T2XCLK in TMR2CN0
-   - Timer 2 low byte uses the system clock
+   - Timer 2 low byte uses the clock defined by T2XCLK in TMR2CN0
    - Timer 3 high byte uses the clock defined by T3XCLK in TMR3CN0
    - Timer 3 low byte uses the system clock
    - Timer 1 uses the system clock
    ***********************************************************************/
   CKCON0 = CKCON0_SCA__SYSCLK_DIV_4 | CKCON0_T0M__SYSCLK
-      | CKCON0_T2MH__EXTERNAL_CLOCK | CKCON0_T2ML__SYSCLK
+      | CKCON0_T2MH__EXTERNAL_CLOCK | CKCON0_T2ML__EXTERNAL_CLOCK
       | CKCON0_T3MH__EXTERNAL_CLOCK | CKCON0_T3ML__SYSCLK | CKCON0_T1M__SYSCLK;
   // [CKCON0 - Clock Control 0]$
 
@@ -650,11 +648,11 @@ INTERRUPT_0_enter_DefaultMode_from_smbus_reset (void)
    - Disable all SPI0 interrupts
    - Disable all Timer 0 interrupt
    - Disable all Timer 1 interrupt
-   - Disable Timer 2 interrupt
+   - Enable interrupt requests generated by the TF2L or TF2H flags
    - Disable UART0 interrupt
    ***********************************************************************/
   IE = IE_EA__ENABLED | IE_EX0__DISABLED | IE_EX1__DISABLED | IE_ESPI0__DISABLED
-      | IE_ET0__DISABLED | IE_ET1__DISABLED | IE_ET2__DISABLED
+      | IE_ET0__DISABLED | IE_ET1__DISABLED | IE_ET2__ENABLED
       | IE_ES0__DISABLED;
   // [IE - Interrupt Enable]$
 

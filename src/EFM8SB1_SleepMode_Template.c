@@ -46,7 +46,10 @@ uint8_t mode;           // Stimulation mode. 1 for multichannel scan, 2 for sing
 uint8_t channel_nr;     // Preset channel number for the single-channel stimulation
 uint16_t T_on;           // Stimulation time on and off, seconds
 bool On;                // Voltage converter and 20V plane switch -> Switches stimulation circuit
-bool isStim = 0;        // Stimulation on/off status for the sleep mode initiation
+bool isStim = 1;        // Stimulation on/off status stim on/off mode initiation
+bool idle = 0; // idle bit
+volatile uint8_t bigCounter;   // counter for Timer 2 to count timescales on the order of seconds
+volatile uint16_t secondsPassed = 0; // counter for seconds and minutes
 
 // Stimulation function prototypes
 void Polarity(uint8_t);
@@ -55,6 +58,7 @@ void T2_Waitus(uint16_t);
 void Pulse_On(void);
 void Pulse_Off(void);
 void Stim_Sequence(uint16_t, uint16_t);
+void Stim_Off(void);
 
 
 // I2C
@@ -137,6 +141,7 @@ int main (void)
   PW_LB = SAVE[1]; // Pulse Width in chunks of 50 us low byte
   T_HB = SAVE[2]; // Period high byte
   T_LB = SAVE[3]; // Period frequency low byte
+  T_on = SAVE[4]; // Pulse train period and channel switching time, seconds
   On = SAVE[7];
   Iset = SAVE[8];     // IREF current value, remember 0x3F is maximum, 0.5 mA reference current
   mode = SAVE[9];     // Stimulation mode. 1 - Channel scanning; 2 - Single channel stimulation
@@ -155,18 +160,30 @@ int main (void)
 
   LPM_Init();                         // Initialize Power Management
   LPM_Enable_Wakeup(RTC);
+  MUX36S16_output(channel_nr); // first setup of the channel
+  TMR2CN0 |= TMR2CN0_TR2__RUN; // start timer 2
+
 	//----------------------------------
 	// Main Application Loop
 	//----------------------------------
 
   while (1)
 	{
-   MUX36S16_output(channel_nr);    // Select the stimulation channel based on the NFC reading
-   Stim_Sequence(PW, T);
-	  }
+      if (isStim) {
+   // what's the best place to set the channel?
+   //MUX36S16_output(channel_nr);    // Select the stimulation channel based on the NFC reading
+          Stim_Sequence(PW, T);
+      }
+      else if (isStim == 0 && idle == 1) {
+          Stim_Off();
+          idle = 0;
+      }
+	}
 }
 
 void Stim_Sequence(uint16_t PW, uint16_t T) {
+  // disable interrupts?
+  // IE_EA = 0;
   Polarity(0); // start shunted
   Polarity(1);// Forward polarity
   Pulse_On();
@@ -182,6 +199,13 @@ void Stim_Sequence(uint16_t PW, uint16_t T) {
   Polarity(0);
 
   T0_Waitus(T);
+  // enable interrupts?
+  //IE_EA = 1;
+}
+
+void Stim_Off(void) {
+  Polarity(0); // shunt
+  Pulse_Off(); // current off
 }
 
 
@@ -347,12 +371,12 @@ void SMB_Read (void)
  * 1 1 1 1 1 Channel 16
  */
 void MUX36S16_output(uint8_t mux36s16_state){
-  IE_EA = 0;
+  //IE_EA = 0;
   P17 = (mux36s16_state & (1 << (1-1))) ? 1 : 0; // Get 1st bit of MUX36S16 state byte
   P16 = (mux36s16_state & (1 << (2-1))) ? 1 : 0; // Get 2nd bit of the state byte
   P15 = (mux36s16_state & (1 << (3-1))) ? 1 : 0; // Get 3rd bit of the state byte
   P14 = (mux36s16_state & (1 << (4-1))) ? 1 : 0; // Get 4th bit of the state byte
-  IE_EA = 1;
+  //IE_EA = 1;
 }
 
 /*
@@ -392,11 +416,11 @@ void check_channel()
  * 1  1   1   1   Channels 8A and 8B
  */
 void MUX36D08_output(uint8_t mux36d08_state){
-  IE_EA = 0;
+  //IE_EA = 0;
   P02 = (mux36d08_state & (1 << (1-1))) ? 1 : 0; // Get 1st bit of MUX36D08 state byte
   P03 = (mux36d08_state & (1 << (2-1))) ? 1 : 0; // Get 2nd bit of the state byte
   P04 = (mux36d08_state & (1 << (3-1))) ? 1 : 0; // Get 3rd bit of the state byte
-  IE_EA = 0;
+  //IE_EA = 1;
 }
 
 /*
