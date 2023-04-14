@@ -134,7 +134,6 @@ enter_DefaultMode_from_smbus_reset (void)
   PORTS_0_enter_DefaultMode_from_smbus_reset ();
   PORTS_1_enter_DefaultMode_from_smbus_reset ();
   PBCFG_0_enter_DefaultMode_from_smbus_reset ();
-  RSTSRC_0_enter_DefaultMode_from_smbus_reset ();
   CLOCK_0_enter_DefaultMode_from_smbus_reset ();
   TIMER01_0_enter_DefaultMode_from_smbus_reset ();
   TIMER16_2_enter_DefaultMode_from_smbus_reset ();
@@ -461,17 +460,9 @@ TIMER01_0_enter_DefaultMode_from_smbus_reset (void)
   // [TL0 - Timer 0 Low Byte]$
 
   // $[TH1 - Timer 1 High Byte]
-  /***********************************************************************
-   - Timer 1 High Byte = 0xFF
-   ***********************************************************************/
-  TH1 = (0xFF << TH1_TH1__SHIFT);
   // [TH1 - Timer 1 High Byte]$
 
   // $[TL1 - Timer 1 Low Byte]
-  /***********************************************************************
-   - Timer 1 Low Byte = 0x1E
-   ***********************************************************************/
-  TL1 = (0x1E << TL1_TL1__SHIFT);
   // [TL1 - Timer 1 Low Byte]$
 
   // $[Timer Restoration]
@@ -547,21 +538,21 @@ TIMER_SETUP_0_enter_DefaultMode_from_smbus_reset (void)
   // $[TMOD - Timer 0/1 Mode]
   /***********************************************************************
    - Mode 2, 8-bit Counter/Timer with Auto-Reload
-   - Mode 0, 13-bit Counter/Timer
+   - Mode 2, 8-bit Counter/Timer with Auto-Reload
    - Timer Mode
    - Timer 0 enabled when TR0 = 1 irrespective of INT0 logic level
    - Timer Mode
    - Timer 1 enabled when TR1 = 1 irrespective of INT1 logic level
    ***********************************************************************/
-  TMOD = TMOD_T0M__MODE2 | TMOD_T1M__MODE0 | TMOD_CT0__TIMER
+  TMOD = TMOD_T0M__MODE2 | TMOD_T1M__MODE2 | TMOD_CT0__TIMER
       | TMOD_GATE0__DISABLED | TMOD_CT1__TIMER | TMOD_GATE1__DISABLED;
   // [TMOD - Timer 0/1 Mode]$
 
   // $[TCON - Timer 0/1 Control]
   /***********************************************************************
-   - Start Timer 0 running
+   - Start Timer 1 running
    ***********************************************************************/
-  TCON |= TCON_TR0__RUN;
+  TCON |= TCON_TR1__RUN;
   // [TCON - Timer 0/1 Control]$
 
 }
@@ -611,10 +602,13 @@ SMBUS_0_enter_DefaultMode_from_smbus_reset (void)
 
   // $[SMB0CF - SMBus 0 Configuration]
   /***********************************************************************
+   - Timer 1 Overflow
    - Slave states are inhibited
    - Enable the SMBus module
    ***********************************************************************/
-  SMB0CF |= SMB0CF_INH__SLAVE_DISABLED | SMB0CF_ENSMB__ENABLED;
+  SMB0CF &= ~SMB0CF_SMBCS__FMASK;
+  SMB0CF |= SMB0CF_SMBCS__TIMER1 | SMB0CF_INH__SLAVE_DISABLED
+      | SMB0CF_ENSMB__ENABLED;
   // [SMB0CF - SMBus 0 Configuration]$
 
 }
@@ -752,17 +746,9 @@ TIMER16_3_enter_DefaultMode_from_smbus_reset (void)
   // [TMR3L - Timer 3 Low Byte]$
 
   // $[TMR3RLH - Timer 3 Reload High Byte]
-  /***********************************************************************
-   - Timer 3 Reload High Byte = 0xFE
-   ***********************************************************************/
-  TMR3RLH = (0xFE << TMR3RLH_TMR3RLH__SHIFT);
   // [TMR3RLH - Timer 3 Reload High Byte]$
 
   // $[TMR3RLL - Timer 3 Reload Low Byte]
-  /***********************************************************************
-   - Timer 3 Reload Low Byte = 0x0C
-   ***********************************************************************/
-  TMR3RLL = (0x0C << TMR3RLL_TMR3RLL__SHIFT);
   // [TMR3RLL - Timer 3 Reload Low Byte]$
 
   // $[TMR3CN0]

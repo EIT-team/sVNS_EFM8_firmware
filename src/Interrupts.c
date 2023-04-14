@@ -22,10 +22,10 @@ extern volatile uint16_t secondsPassed;
 extern uint16_t T_on;
 extern bool idle;
 extern bool isStim;
-extern uint8_t channel_nr;
+//extern uint8_t channel_nr;
+extern bool channel_set;
 
-extern void MUX36S16_output(uint8_t);
-extern void check_channel(void);
+//extern void MUX36S16_output(uint8_t);
 
 //-----------------------------------------------------------------------------
 // SMBUS0_ISR
@@ -189,21 +189,18 @@ SI_INTERRUPT (TIMER2_ISR, TIMER2_IRQn)
 
     TMR2CN0_TF2H = 0; // clear overflow flag
     bigCounter ++; // increments every 20 milliseconds, 50 Hz
-    if (bigCounter == 51) { // 50 * 20 ms ==> 1 second passed
+    if (bigCounter > 49) { // 50 * 20 ms ==> 1 second passed
         bigCounter = 0;
         secondsPassed ++;
+        channel_set = 0;
         if (secondsPassed == 65535) { // prevent 16 bit overflow
             secondsPassed = 0;
         }
     }
-    if (secondsPassed == T_on) { // target pulse train period achieved
-        //channel_nr ++; check_channel();
-
-        MUX36S16_output(channel_nr); // set the output channel once the timer achieved
+    if (secondsPassed >= T_on) { // target pulse train period achieved
         secondsPassed = 0; // reset the timer
         isStim = !isStim; // flip state bits
         idle = !idle;
     }
-    // channel routine?
   }
 

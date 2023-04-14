@@ -25,8 +25,8 @@
 #include <SI_EFM8SB1_Register_Enums.h>                  // SI_SFR declarations
 #include "InitDevice.h"
 #include "EFM8SB1_SMBus_Master_Multibyte.h"
-#include "smartclock.h"                // RTC Functionality
-#include "power.h"                     // Power Management Functionality
+//#include "smartclock.h"                // RTC Functionality
+//#include "power.h"                     // Power Management Functionality
 
 //-----------------------------------------------------------------------------
 // Application-component specific constants and variables
@@ -42,12 +42,16 @@ uint8_t T_HB;        // Pulse period timer setting high byte
 uint8_t T_LB;        // Pulse period timer setting low byte
 uint16_t T;          // Pulse period timer setting 16-bit word
 uint8_t Iset;           // Set IREF current reference value, 0-63 (decimal) / 0 - 3F (hex)
-uint8_t mode;           // Stimulation mode. 1 for multichannel scan, 2 for singlechannel uninterrupted stimulation
+uint8_t mode;           // Stimulation mode. 1 for singlechannel stimulation, 2 for multichannel scan (once), 3 for for multichannel scan (loop)
 uint8_t channel_nr;     // Preset channel number for the single-channel stimulation
 uint16_t T_on;           // Stimulation time on and off, seconds
+uint8_t T_on_HB;
+uint8_t T_on_LB;
 bool On;                // Voltage converter and 20V plane switch -> Switches stimulation circuit
 bool isStim = 1;        // Stimulation on/off status stim on/off mode initiation
 bool idle = 0; // idle bit
+bool channel_set = 0;
+bool telemetry_enabled = 0;
 volatile uint8_t bigCounter;   // counter for Timer 2 to count timescales on the order of seconds
 volatile uint16_t secondsPassed = 0; // counter for seconds and minutes
 
@@ -59,7 +63,9 @@ void Pulse_On(void);
 void Pulse_Off(void);
 void Stim_Sequence(uint16_t, uint16_t);
 void Stim_Off(void);
-
+void mode_single_channel(void);
+void mode_multichannel_scanning_nonloop(void);
+void mode_multichannel_scanning_loop(void);
 
 // I2C
 // P0.0 - SMBus SDA
@@ -93,8 +99,6 @@ SI_SBIT (P14, SFR_P1, 4);                   // Pin 1.4 for MUX36S16 A3
 uint8_t mux36s16_state = 0;                 // MUX36S16 state byte
 // MUX36S16 state function
 void MUX36S16_output(uint8_t);
-// Channel check function due to the skipped MUX36S16 channel S14A and S14B
-void check_channel();
 
 // MUX36D08 - multiplexer for output channels, pins 0.2 - 0.4
 SI_SBIT (P02, SFR_P0, 2);                   // Pin 0.2 for MUX36D08 A0
@@ -120,7 +124,7 @@ void SiLabs_Startup (void)
 //-----------------------------------------------------------------------------
 // main() Routine
 // ----------------------------------------------------------------------------
-int main (void)
+void main (void)
 {
   T0_Waitus(1);                     // Wait 50 us for stability
   // SMBus reset mode in case of I2C comms SDA fault
@@ -137,52 +141,121 @@ int main (void)
   for(j=0; j<16; j++){
       SAVE[j] = SMB_DATA_IN[j];   // Save read buffer into array
   }
+
+  TCON |= TCON_TR1__STOP; // stop SMBus timer 1 to save energy
+
   PW_HB = SAVE[0]; // Pulse Width in chunks of 50 us high byte
   PW_LB = SAVE[1]; // Pulse Width in chunks of 50 us low byte
   T_HB = SAVE[2]; // Period high byte
   T_LB = SAVE[3]; // Period frequency low byte
-  T_on = SAVE[4]; // Pulse train period and channel switching time, seconds
+  T_on_HB = SAVE[4]; // Pulse train period and channel switching time, seconds
+  T_on_LB = SAVE[5];
   On = SAVE[7];
   Iset = SAVE[8];     // IREF current value, remember 0x3F is maximum, 0.5 mA reference current
-  mode = SAVE[9];     // Stimulation mode. 1 - Channel scanning; 2 - Single channel stimulation
+  mode = SAVE[9];     // Stimulation mode. 1 for singlechannel stimulation, 2 for multichannel scan (once), 3 for for multichannel scan (loop)
   channel_nr = SAVE[10];
-  check_channel(); // checks if user wants channel 14 or 15 (channel 14 is skipped in MUX36S16)
+  telemetry_enabled = SAVE[11];
 
   // Set the device according to read values
   P05 = On;              // Enable or disable LT8410, enable MUX36D08 and 2x MUX36S16
   PW = (PW_HB<<8)|(PW_LB); // Combine PW into single hex
   T = (T_HB<<8)|(T_LB); // Combine pulse period into single hex
-
+  T_on = (T_on_HB<<8)|(T_on_LB);
   // RTC setup
-  RTC0CN0_Local = 0xC0;                // Initialize Local Copy of RTC0CN0
-  RTC_WriteAlarm(WAKE_INTERVAL_TICKS);// Set the Alarm Value
-  RTC0CN0_SetBits(RTC0TR+RTC0AEN+ALRM);// Enable Counter, Alarm, and Auto-Reset
+//  RTC0CN0_Local = 0xC0;                // Initialize Local Copy of RTC0CN0
+//  RTC_WriteAlarm(WAKE_INTERVAL_TICKS);// Set the Alarm Value
+//  RTC0CN0_SetBits(RTC0TR+RTC0AEN+ALRM);// Enable Counter, Alarm, and Auto-Reset
+//
+//  LPM_Init();                         // Initialize Power Management
+//  LPM_Enable_Wakeup(RTC);
 
-  LPM_Init();                         // Initialize Power Management
-  LPM_Enable_Wakeup(RTC);
-  MUX36S16_output(channel_nr); // first setup of the channel
-  TMR2CN0 |= TMR2CN0_TR2__RUN; // start timer 2
 
-	//----------------------------------
-	// Main Application Loop
-	//----------------------------------
+  TMR2CN0 |= TMR2CN0_TR2__RUN; // start timer 2 to measure the pulse frequency
 
+  if (mode == 1) {
+      MUX36S16_output(channel_nr); // initial setup of the channel
+      if (telemetry_enabled) {
+        Write_Channel(channel_nr); // write the channel
+      }
+      mode_single_channel();
+  }
+  else if (mode == 2) {
+      mode_multichannel_scanning_nonloop();
+  }
+  else if (mode == 3) {
+      mode_multichannel_scanning_loop();
+  }
+}
+
+//----------------------------------
+// Main Application States
+//----------------------------------
+
+
+void mode_single_channel(void) {
   while (1)
-	{
-      // check the mode
+  {
+    if (isStim) {
+        Stim_Sequence(PW, T);
+    }
+    else if (isStim == 0 && idle == 1) {
+        Stim_Off();
+        idle = 0;
+    }
+  }
+}
 
+void mode_multichannel_scanning_nonloop(void) {
+  while (1)
+  {
+    if (secondsPassed == 0 && isStim && !channel_set) {
 
+      if (channel_nr >= 15) {
+          TMR2CN0 &= ~(TMR2CN0_TR2__BMASK); // stop timer 2
+          secondsPassed = 0; // reset the seconds count
+          bigCounter = 0; // reset overflows counter
+          while (1); // loop until MCU reset
+      }
+      MUX36S16_output(channel_nr); channel_set = 1;
+      if (telemetry_enabled) {
+        Write_Channel(channel_nr); // write the channel
+      }
+      channel_nr ++;
+    }
+
+    if (isStim) {
+        Stim_Sequence(PW, T);
+    }
+    else if (isStim == 0 && idle == 1) {
+        Stim_Off();
+        idle = 0;
+    }
+  }
+}
+
+void mode_multichannel_scanning_loop(void) {
+  while (1)
+  {
+      if (secondsPassed == 0 && isStim && !channel_set) {
+
+        if (channel_nr >= 15) {
+            channel_nr = 0;
+        }
+        MUX36S16_output(channel_nr); channel_set = 1;
+        if (telemetry_enabled) {
+          Write_Channel(channel_nr); // write the channel
+        }
+        channel_nr ++;
+      }
 
       if (isStim) {
-   // what's the best place to set the channel?
-   //MUX36S16_output(channel_nr);    // Select the stimulation channel based on the NFC reading
           Stim_Sequence(PW, T);
       }
       else if (isStim == 0 && idle == 1) {
           Stim_Off();
           idle = 0;
       }
-	}
+    }
 }
 
 void Stim_Sequence(uint16_t PW, uint16_t T) {
@@ -376,26 +449,21 @@ void SMB_Read (void)
  */
 void MUX36S16_output(uint8_t mux36s16_state){
   //IE_EA = 0;
+  /*
+   * Because channel 14 for the output MUX36S16 is skipped,
+   * channel numbers are shifted by one for the channel 14 (decimal code 13, hex D) and 15
+   * (decimal code 14, hex E). Calibrate that such that user can input standard channels
+   * according to the channel cuff enumeration.
+   */
+
+  if (mux36s16_state >= 13){
+      mux36s16_state = mux36s16_state + 1;
+  }
   P17 = (mux36s16_state & (1 << (1-1))) ? 1 : 0; // Get 1st bit of MUX36S16 state byte
   P16 = (mux36s16_state & (1 << (2-1))) ? 1 : 0; // Get 2nd bit of the state byte
   P15 = (mux36s16_state & (1 << (3-1))) ? 1 : 0; // Get 3rd bit of the state byte
   P14 = (mux36s16_state & (1 << (4-1))) ? 1 : 0; // Get 4th bit of the state byte
   //IE_EA = 1;
-}
-
-/*
- * Function: check_channel
- * -----------------------
- * Because channel 14 for the output MUX36S16 is skipped,
- * channel numbers are shifted by one for the channel 14 (decimal code 13, hex D) and 15
- * (decimal code 14, hex E). Calibrate that such that user can input standard channels
- * according to the channel cuff enumeration.
- */
-void check_channel()
-{
-  if (channel_nr >= 13){
-      channel_nr = channel_nr + 1;
-  }
 }
 
 /*
@@ -435,11 +503,9 @@ void MUX36D08_output(uint8_t mux36d08_state){
  */
 void Write_Channel(uint8_t channel_to_write)
 {
-  if (channel_to_write >= 14){
-      channel_to_write = channel_to_write - 1; // Because in the MUX36S16 wiring channel 14 is skipped, in the multichannel scanning mode, channel 14 is skipped
-      // and wired to channel 15, but for the user who has just the cuff it is irrelevant and unnecessary to know, hence write on the NFC channel 14 as "14" (decimal 13/hex D).
-  }
+  TCON |= TCON_TR1__RUN; // start timer 1 for SMBus clock
   SMB_DATA_OUT[0] = channel_to_write;
   TARGET = SLAVE_ADDR;
   SMB_Write();                     // Initiate SMBus write
+  TCON |= TCON_TR1__STOP; // stop timer 1 to save energy
 }

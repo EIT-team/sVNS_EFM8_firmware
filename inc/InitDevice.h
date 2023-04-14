@@ -34,8 +34,6 @@ PORTS_1_enter_DefaultMode_from_smbus_reset (void);
 extern void
 PBCFG_0_enter_DefaultMode_from_smbus_reset (void);
 extern void
-RSTSRC_0_enter_DefaultMode_from_smbus_reset (void);
-extern void
 CLOCK_0_enter_DefaultMode_from_smbus_reset (void);
 extern void
 TIMER01_0_enter_DefaultMode_from_smbus_reset (void);
