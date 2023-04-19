@@ -20,6 +20,7 @@ bool Read_Init = 0;
 extern volatile uint8_t bigCounter;
 extern volatile uint16_t secondsPassed;
 extern uint16_t T_on;
+extern uint16_t doubleT_on;
 extern bool idle;
 extern bool isStim;
 //extern uint8_t channel_nr;
@@ -191,16 +192,21 @@ SI_INTERRUPT (TIMER2_ISR, TIMER2_IRQn)
     bigCounter ++; // increments every 20 milliseconds, 50 Hz
     if (bigCounter > 49) { // 50 * 20 ms ==> 1 second passed
         bigCounter = 0;
-        secondsPassed ++;
-        channel_set = 0;
+        secondsPassed ++; // count seconds
+//        channel_set = 0;
         if (secondsPassed == 65535) { // prevent 16 bit overflow
             secondsPassed = 0;
         }
     }
-    if (secondsPassed >= T_on) { // target pulse train period achieved
-        secondsPassed = 0; // reset the timer
+    if (secondsPassed == T_on) { // target pulse train period achieved
+        secondsPassed = 0; // reset the T_on / seconds timer
         isStim = !isStim; // flip state bits
-        idle = !idle;
-    }
+        if (isStim) {
+            channel_set = 0; // set channel setting bit
+          }
+        else {
+            idle = !idle; // if not stimulation state, then flip idle bit
+          }
+        }
   }
 

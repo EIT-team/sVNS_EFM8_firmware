@@ -45,6 +45,7 @@ uint8_t Iset;           // Set IREF current reference value, 0-63 (decimal) / 0 
 uint8_t mode;           // Stimulation mode. 1 for singlechannel stimulation, 2 for multichannel scan (once), 3 for for multichannel scan (loop)
 uint8_t channel_nr;     // Preset channel number for the single-channel stimulation
 uint16_t T_on;           // Stimulation time on and off, seconds
+uint16_t doubleT_on;
 uint8_t T_on_HB;
 uint8_t T_on_LB;
 bool On;                // Voltage converter and 20V plane switch -> Switches stimulation circuit
@@ -161,6 +162,7 @@ void main (void)
   PW = (PW_HB<<8)|(PW_LB); // Combine PW into single hex
   T = (T_HB<<8)|(T_LB); // Combine pulse period into single hex
   T_on = (T_on_HB<<8)|(T_on_LB);
+  doubleT_on = 2*T_on;
   // RTC setup
 //  RTC0CN0_Local = 0xC0;                // Initialize Local Copy of RTC0CN0
 //  RTC_WriteAlarm(WAKE_INTERVAL_TICKS);// Set the Alarm Value
@@ -195,12 +197,17 @@ void main (void)
 void mode_single_channel(void) {
   while (1)
   {
+    if (secondsPassed == 0 && isStim && !channel_set) {
+        P05 = On;
+        channel_set = 1;
+    }
     if (isStim) {
         Stim_Sequence(PW, T);
     }
-    else if (isStim == 0 && idle == 1) {
+    if (isStim == 0 && idle == 1) {
         Stim_Off();
         idle = 0;
+        P05 = 0; // switch off 20V stuff to reduce the energy
     }
   }
 }
@@ -210,25 +217,28 @@ void mode_multichannel_scanning_nonloop(void) {
   {
     if (secondsPassed == 0 && isStim && !channel_set) {
 
-      if (channel_nr >= 15) {
+      if (channel_nr >= 15) { // Prevent the channel from going beyond defined state and stop stimulation at the last one
           TMR2CN0 &= ~(TMR2CN0_TR2__BMASK); // stop timer 2
           secondsPassed = 0; // reset the seconds count
           bigCounter = 0; // reset overflows counter
+          P05 = 0; // Switch off periphery
           while (1); // loop until MCU reset
       }
-      MUX36S16_output(channel_nr); channel_set = 1;
+      MUX36S16_output(channel_nr); channel_set = 1; // set the channel, raise channel set bit to prevent multiple if states and step in this if branch once
       if (telemetry_enabled) {
-        Write_Channel(channel_nr); // write the channel
+        Write_Channel(channel_nr); // write the channel number if the setting is enabled by user
       }
-      channel_nr ++;
-    }
+      channel_nr ++; // once channel is set and transmitted via NFC, prepare the next channel
+      P05 = On;       // "awaken" the periphery. This should be done once per !channel_set if branch
+    } // end channel setting and periphery awakening "if" branch
 
-    if (isStim) {
-        Stim_Sequence(PW, T);
+    if (isStim) { // Stimulation required. Multiple step-ins - every time when isStim is "1".
+        Stim_Sequence(PW, T); // Stimulation sequence with set PW and PF
     }
-    else if (isStim == 0 && idle == 1) {
+    else if (isStim == 0 && idle == 1) { // Once T_on (pulse train time) reached, isStim state is flipped. If isStim was 0, then idle is 1. Enter silent state
         Stim_Off();
-        idle = 0;
+        idle = 0; // silence bit
+        P05 = 0; // switch off 20V stuff to reduce the energy
     }
   }
 }
@@ -246,6 +256,7 @@ void mode_multichannel_scanning_loop(void) {
           Write_Channel(channel_nr); // write the channel
         }
         channel_nr ++;
+        P05 = On;
       }
 
       if (isStim) {
@@ -254,6 +265,7 @@ void mode_multichannel_scanning_loop(void) {
       else if (isStim == 0 && idle == 1) {
           Stim_Off();
           idle = 0;
+          P05 = 0; // switch off 20V stuff to reduce the energy
       }
     }
 }
